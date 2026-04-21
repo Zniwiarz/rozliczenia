@@ -54,13 +54,21 @@ import {
 
 // --- TWOJA KONFIGURACJA FIREBASE ---
 const firebaseConfig = {
+
   apiKey: "AIzaSyAr_avRX_H4TKcIVQ2g2E57VH42k5KvPb4",
+
   authDomain: "rozliczenia-bb311.firebaseapp.com",
+
   projectId: "rozliczenia-bb311",
+
   storageBucket: "rozliczenia-bb311.firebasestorage.app",
+
   messagingSenderId: "368403149682",
+
   appId: "1:368403149682:web:31d02662801b55db7763eb"
+
 };
+
 
 // Inicjalizacja usług Firebase
 const app = initializeApp(firebaseConfig);
