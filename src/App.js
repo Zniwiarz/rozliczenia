@@ -484,11 +484,11 @@ const App = () => {
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="bg-white/10 rounded-xl p-3 border border-white/10 backdrop-blur-md">
                     <p className="text-[9px] font-black text-emerald-100 uppercase mb-1">Adam</p>
-                    <p className="text-xl font-black tabular-nums">{stats.personalPayouts.Adam.toLocaleString()}</p>
+                    <p className="text-xl font-black tabular-nums">{stats.payouts.Adam.toLocaleString()}</p>
                   </div>
                   <div className="bg-white/10 rounded-xl p-3 border border-white/10 backdrop-blur-md">
                     <p className="text-[9px] font-black text-emerald-100 uppercase mb-1">Mateusz</p>
-                    <p className="text-xl font-black tabular-nums">{stats.personalPayouts.Mateusz.toLocaleString()}</p>
+                    <p className="text-xl font-black tabular-nums">{stats.payouts.Mateusz.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
