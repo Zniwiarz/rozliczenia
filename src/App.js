@@ -89,15 +89,15 @@ const App = () => {
   });
 
   const staff = ['Adam', 'Mateusz'];
-  const quickTagsIncome = [{ name: 'Zaliczka', icon: <Banknote size={14} />, color: '#10b981' }];
+  const quickTagsIncome = [{ name: 'Zaliczka', icon: <Banknote size={12} />, color: '#10b981' }];
   const quickTagsExpense = [
-    { name: 'Materiały', icon: <Package size={14} />, color: '#3b82f6' }, 
-    { name: 'Paliwo', icon: <Fuel size={14} />, color: '#f59e0b' },      
-    { name: 'Usługi', icon: <Briefcase size={14} />, color: '#06b6d4' },  
-    { name: 'Wypłata', icon: <HandCoins size={14} />, color: '#10b981' }, 
-    { name: 'Inwestycja', icon: <Gem size={14} />, color: '#8b5cf6' },    
-    { name: 'Akcesoria', icon: <Wrench size={14} />, color: '#64748b' },  
-    { name: 'Faktura', icon: <FileText size={14} />, color: '#6366f1' }   
+    { name: 'Materiały', icon: <Package size={12} />, color: '#3b82f6' }, 
+    { name: 'Paliwo', icon: <Fuel size={12} />, color: '#f59e0b' },      
+    { name: 'Usługi', icon: <Briefcase size={12} />, color: '#06b6d4' },  
+    { name: 'Wypłata', icon: <HandCoins size={12} />, color: '#10b981' }, 
+    { name: 'Inwestycja', icon: <Gem size={12} />, color: '#8b5cf6' },    
+    { name: 'Akcesoria', icon: <Wrench size={12} />, color: '#64748b' },  
+    { name: 'Faktura', icon: <FileText size={12} />, color: '#6366f1' }   
   ];
 
   const handleExport = useCallback(() => {
@@ -198,7 +198,7 @@ const App = () => {
     const allTags = [...quickTagsIncome, ...quickTagsExpense];
     const tag = allTags.find(t => t.name.toLowerCase() === description.toLowerCase());
     if (tag) return React.cloneElement(tag.icon, { color: tag.color });
-    return <TagIcon size={14} className="text-slate-300" />;
+    return <TagIcon size={12} className="text-slate-300" />;
   };
 
   useEffect(() => {
@@ -266,102 +266,101 @@ const App = () => {
     };
   }, [transactions]);
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse text-sm">WCZYTYWANIE...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse text-xs tracking-widest">WCZYTYWANIE...</div>;
 
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full bg-white rounded-[2rem] shadow-2xl p-10 text-center space-y-6">
-          <div className="bg-indigo-600 w-20 h-20 rounded-2xl flex items-center justify-center text-white mx-auto rotate-3 shadow-lg"><Building2 size={40} /></div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">System Finansowy</h2>
-          {authError && <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-xs text-red-600 font-bold">{authError}</div>}
-          <button onClick={loginWithGoogle} className="w-full py-4 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G" /> Zaloguj się przez Google</button>
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="max-w-sm w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-4">
+          <div className="bg-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center text-white mx-auto shadow-md"><Building2 size={32} /></div>
+          <h2 className="text-xl font-black text-slate-800 tracking-tight">System Finansowy</h2>
+          {authError && <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-[10px] text-red-600 font-bold">{authError}</div>}
+          <button onClick={loginWithGoogle} className="w-full py-3 bg-slate-900 text-white rounded-lg flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="14" alt="G" /> Zaloguj się przez Google</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-10 font-sans antialiased text-left">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-6 font-sans antialiased text-left text-xs">
       <header className="bg-white border-b sticky top-0 z-40 shadow-sm">
-        <div className="max-w-[1300px] mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
-            <div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Building2 size={20} /></div>
-            <h1 className="text-xl font-black tracking-tighter uppercase text-slate-800">System <span className="text-indigo-600">Rozliczeń</span></h1>
+        <div className="max-w-[1300px] mx-auto px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('dashboard')}>
+            <div className="bg-indigo-600 p-1 rounded-md text-white"><Building2 size={16} /></div>
+            <h1 className="text-base font-black tracking-tighter uppercase text-slate-800">System <span className="text-indigo-600">Rozliczeń</span></h1>
           </div>
-          <div className="flex items-center gap-6">
-            <nav className="flex bg-slate-100 p-1 rounded-xl">
-              <button onClick={() => setView('dashboard')} className={`px-5 py-2 rounded-lg text-[11px] font-black uppercase transition-all ${view === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Panel</button>
-              <button onClick={() => setView('report')} className={`px-5 py-2 rounded-lg text-[11px] font-black uppercase transition-all ${view === 'report' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Raport</button>
+          <div className="flex items-center gap-4">
+            <nav className="flex bg-slate-100 p-0.5 rounded-lg">
+              <button onClick={() => setView('dashboard')} className={`px-4 py-1 rounded-md text-[9px] font-black uppercase transition-all ${view === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Panel</button>
+              <button onClick={() => setView('report')} className={`px-4 py-1 rounded-md text-[9px] font-black uppercase transition-all ${view === 'report' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Raport</button>
             </nav>
-            <button onClick={() => signOut(auth)} className="p-2.5 text-slate-400 hover:text-red-500 transition-colors"><LogOut size={22} /></button>
+            <button onClick={() => signOut(auth)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><LogOut size={18} /></button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1300px] mx-auto px-6 mt-6">
+      <main className="max-w-[1300px] mx-auto px-4 mt-4">
         {view === 'dashboard' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
-            {/* LEWA KOLUMNA: SALDO I FORMULARZ */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="bg-slate-900 rounded-[1.5rem] p-6 text-white shadow-xl relative overflow-hidden">
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Dostępny kapitał</p>
-                <h2 className="text-3xl font-black mb-5 tracking-tight tabular-nums">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1">PLN</span></h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-0.5">Mateusz (do zwrotu)</p>
-                    <p className="text-xl font-black tabular-nums">{stats.pendingDebts.Mateusz.toFixed(0)} zł</p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
+            <div className="lg:col-span-5 space-y-4">
+              <div className="bg-slate-900 rounded-xl p-4 text-white shadow-lg relative overflow-hidden">
+                <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-0.5">Dostępny kapitał</p>
+                <h2 className="text-2xl font-black mb-4 tracking-tight tabular-nums">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-[10px] font-medium text-slate-500 ml-1">PLN</span></h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[8px] uppercase font-black text-orange-400 mb-0.5">Mateusz (do zwrotu)</p>
+                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Mateusz.toFixed(0)} zł</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-0.5">Adam (do zwrotu)</p>
-                    <p className="text-xl font-black tabular-nums">{stats.pendingDebts.Adam.toFixed(0)} zł</p>
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[8px] uppercase font-black text-orange-400 mb-0.5">Adam (do zwrotu)</p>
+                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Adam.toFixed(0)} zł</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden border-b-4 border-b-indigo-600">
-                <div className="flex p-1.5 bg-slate-50 border-b">
-                  <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
-                  <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt</button>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden border-b-2 border-b-indigo-600">
+                <div className="flex p-1 bg-slate-50 border-b">
+                  <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
+                  <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt</button>
                 </div>
-                <form onSubmit={handleAddOrEdit} className="p-6 space-y-5">
+                <form onSubmit={handleAddOrEdit} className="p-4 space-y-4">
                   {editingTransaction && (
-                    <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-xl flex items-center justify-between">
-                      <span className="text-xs font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={14}/> Tryb Edycji</span>
-                      <button type="button" onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={20}/></button>
+                    <div className="bg-indigo-50 border border-indigo-100 p-2 rounded-lg flex items-center justify-between">
+                      <span className="text-[9px] font-black text-indigo-600 uppercase flex items-center gap-1.5"><Edit2 size={12}/> Tryb Edycji</span>
+                      <button type="button" onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={16}/></button>
                     </div>
                   )}
                   
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Klient / Projekt</label>
-                      <div className="flex gap-2 items-stretch">
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Klient / Projekt</label>
+                      <div className="flex gap-1.5 items-stretch">
                         {isAddingNewClient ? (
-                          <input autoFocus className="flex-1 px-4 py-2.5 text-base rounded-xl border border-indigo-200 outline-none font-bold focus:border-indigo-600" placeholder="Nazwa klienta..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
+                          <input autoFocus className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none font-bold" placeholder="Nazwa klienta..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
                         ) : (
-                          <select className="flex-1 px-4 py-2.5 text-base rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
+                          <select className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none bg-white font-black text-slate-700" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
                             <option value="">Wybierz...</option>
                             {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                           </select>
                         )}
-                        <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="px-3 rounded-xl bg-slate-50 text-indigo-600 border border-slate-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center"><Plus size={20} /></button>
+                        <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="px-2 rounded-lg bg-slate-50 text-indigo-600 border border-slate-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center shadow-sm"><Plus size={16} /></button>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
                       {activeTab === 'income' ? (
-                        <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-black text-xs uppercase shadow-inner"><Building2 size={20} /> Konto Firmowe</div>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700 font-black text-[9px] uppercase shadow-inner"><Building2 size={16} /> Konto Firmowe</div>
                       ) : (
-                        <div className="flex flex-col gap-2.5">
-                          <div className="flex p-1 bg-slate-100 rounded-xl">
-                            <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1.5 rounded-lg text-[11px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button>
-                            <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1.5 rounded-lg text-[11px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex p-0.5 bg-slate-100 rounded-lg">
+                            <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1.5 rounded-md text-[9px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button>
+                            <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1.5 rounded-md text-[9px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button>
                           </div>
                           {!formData.isCompanyFunds && (
-                            <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in zoom-in-95">
+                            <div className="flex gap-1 p-0.5 bg-orange-50 rounded-lg border border-orange-100 animate-in fade-in zoom-in-95">
                               {staff.map(name => (
-                                <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1.5 rounded-lg text-[11px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
+                                <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-md text-[9px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
                               ))}
                             </div>
                           )}
@@ -369,24 +368,24 @@ const App = () => {
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kategoria i Opis</label>
-                      <div className="flex flex-wrap gap-2 mb-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Kategoria i Opis</label>
+                      <div className="flex flex-wrap gap-1 mb-1">
                         {(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (
-                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white shadow-md' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
+                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1.5 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
                         ))}
                       </div>
-                      <input className="w-full px-4 py-2.5 text-base rounded-xl border border-slate-200 outline-none font-bold" placeholder="Opisz operację..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
+                      <input className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none font-bold" placeholder="Opis..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kwota</label>
-                      <div className="flex gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Kwota</label>
+                      <div className="flex gap-3">
                         <div className="relative flex-1">
-                          <input type="number" step="0.01" className="w-full pl-5 pr-12 py-3.5 rounded-xl border-4 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all tracking-tighter" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-300 text-base">zł</span>
+                          <input type="number" step="0.01" className="w-full pl-4 pr-10 py-2.5 rounded-xl border-2 border-slate-50 font-black text-xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all tracking-tighter" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-300 text-[10px]">zł</span>
                         </div>
-                        <button type="submit" className={`px-8 rounded-xl text-white font-black text-sm uppercase shadow-lg transition-all active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
+                        <button type="submit" className={`px-6 rounded-xl text-white font-black text-[10px] uppercase shadow-md transition-all active:scale-95 ${activeTab === 'income' ? 'bg-green-600' : 'bg-red-600'}`}>
                           {editingTransaction ? 'Zapisz' : 'Dodaj'}
                         </button>
                       </div>
@@ -396,68 +395,67 @@ const App = () => {
               </div>
             </div>
 
-            {/* PRAWA KOLUMNA: HISTORIA */}
             <div className="lg:col-span-7 space-y-4 text-left">
-              <div className="bg-white rounded-[1.2rem] p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
+              <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3 items-center">
                 <div className="relative flex-1 w-full text-left">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input className="w-full pl-11 pr-4 py-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm font-black placeholder:text-slate-300" placeholder="Szukaj..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-lg border-none outline-none text-xs font-black placeholder:text-slate-300" placeholder="Szukaj..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                 
                 <div className="relative w-full md:w-auto text-left">
                   <select 
-                    className="w-full md:w-auto pl-4 pr-10 py-2.5 bg-indigo-50 rounded-xl border-none outline-none text-[11px] font-black text-indigo-700 appearance-none cursor-pointer"
+                    className="w-full md:w-auto pl-3 pr-8 py-2 bg-indigo-50 rounded-lg border-none outline-none text-[9px] font-black text-indigo-700 appearance-none cursor-pointer"
                     value={clientFilter}
                     onChange={(e) => setClientFilter(e.target.value)}
                   >
-                    <option value="all">Wszyscy Klienci</option>
+                    <option value="all">Wszyscy</option>
                     {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
-                  <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" size={16} />
+                  <UserCircle className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" size={12} />
                 </div>
 
-                <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
-                  <button onClick={() => setDateFilter('all')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Dziś</button>
-                  <button onClick={() => setDateFilter('month')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Miesiąc</button>
+                <div className="flex bg-slate-100 p-0.5 rounded-lg shrink-0">
+                  <button onClick={() => setDateFilter('all')} className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Dziś</button>
+                  <button onClick={() => setDateFilter('month')} className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>MC</button>
                 </div>
               </div>
 
-              <div className="space-y-2.5 max-h-[750px] overflow-y-auto pr-2 custom-scrollbar text-left">
+              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar text-left">
                 {filteredTransactions.length > 0 ? filteredTransactions.map((item) => (
-                  <div key={item.id} className="bg-white p-4 rounded-[1.2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={`p-3 rounded-2xl shrink-0 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400')}`}>
-                        {item.type === 'income' ? <TrendingUp size={20} /> : (item.status === 'pending' ? <RotateCcw size={20} /> : <CheckCircle2 size={20} />)}
+                  <div key={item.id} className="bg-white p-3 rounded-xl border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-xs">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`p-2 rounded-lg shrink-0 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400')}`}>
+                        {item.type === 'income' ? <TrendingUp size={16} /> : (item.status === 'pending' ? <RotateCcw size={16} /> : <CheckCircle2 size={16} />)}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 font-black text-sm text-slate-800">
+                        <div className="flex items-center gap-1.5 mb-0.5 font-black text-xs text-slate-800">
                           <span className="truncate">{item.client}</span>
-                          <span className={`text-[8px] px-1.5 py-0.5 rounded-md uppercase tracking-widest ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600 shadow-sm' : 'bg-orange-100 text-orange-700 shadow-sm'}`}>{item.person}</span>
+                          <span className={`text-[7px] px-1 py-0.5 rounded-md uppercase tracking-widest ${item.person === 'Firma' ? 'bg-indigo-50 text-indigo-500 shadow-xs' : 'bg-orange-100 text-orange-700 shadow-xs'}`}>{item.person}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                        <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-tight">
                           <p className="flex items-center gap-1 truncate">{getCategoryIcon(item.description)} {item.description}</p>
-                          <span className="flex items-center gap-1 shrink-0"><Calendar size={12}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
+                          <span className="flex items-center gap-1 shrink-0"><Calendar size={10}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <div className={`font-black text-lg tracking-tighter tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
+                        <div className={`font-black text-sm tracking-tighter tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
                           {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
                         </div>
-                        <div className="flex gap-2 justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                        <div className="flex gap-1.5 justify-end mt-1 opacity-0 group-hover:opacity-100 transition-all">
                           {item.status === 'pending' && (
-                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-2.5 py-1 bg-indigo-600 text-white text-[9px] font-black rounded-lg uppercase shadow-md">Rozlicz</button>
+                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-1.5 py-0.5 bg-indigo-600 text-white text-[7px] font-black rounded uppercase shadow-sm">Rozlicz</button>
                           )}
-                          <button onClick={() => startEdit(item)} className="p-1.5 text-slate-300 hover:text-indigo-600 bg-slate-50 rounded-lg transition-all"><Edit2 size={14} /></button>
-                          <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id))} className="p-1.5 text-slate-300 hover:text-red-500 bg-slate-50 rounded-lg transition-all"><Trash2 size={14} /></button>
+                          <button onClick={() => startEdit(item)} className="p-1 text-slate-300 hover:text-indigo-600 bg-slate-50 rounded-lg transition-all"><Edit2 size={12} /></button>
+                          <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id))} className="p-1 text-slate-300 hover:text-red-500 bg-slate-50 rounded-lg transition-all"><Trash2 size={12} /></button>
                         </div>
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="text-center py-20 bg-white rounded-[1.5rem] border-2 border-dashed border-slate-100">
-                    <p className="font-black text-slate-300 uppercase text-[10px] tracking-widest">Brak wyników</p>
+                  <div className="text-center py-16 bg-white rounded-xl border border-slate-100">
+                    <p className="font-black text-slate-200 uppercase text-[9px] tracking-widest">Brak wyników</p>
                   </div>
                 )}
               </div>
@@ -465,69 +463,69 @@ const App = () => {
           </div>
         ) : (
           /* WIDOK RAPORTU */
-          <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-[1.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Przychody</p>
-                <p className="text-3xl font-black text-green-600 tabular-nums">+{stats.totalIncome.toLocaleString()} zł</p>
+          <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Przychody</p>
+                <p className="text-xl font-black text-green-600 tabular-nums">+{stats.totalIncome.toLocaleString()} zł</p>
               </div>
-              <div className="bg-white p-6 rounded-[1.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Koszty</p>
-                <p className="text-3xl font-black text-red-500 tabular-nums">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Koszty</p>
+                <p className="text-xl font-black text-red-500 tabular-nums">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
               </div>
-              <div className="bg-indigo-600 p-6 rounded-[1.5rem] text-white shadow-xl md:col-span-2 flex flex-col justify-center border border-indigo-500 text-left">
-                <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-1">Zysk Netto Wypracowany</p>
-                <p className="text-5xl font-black tabular-nums">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
+              <div className="bg-indigo-600 p-4 rounded-xl text-white shadow-lg md:col-span-2 flex flex-col justify-center border border-indigo-500">
+                <p className="text-[9px] font-black text-indigo-200 uppercase tracking-widest mb-0.5">Zysk Netto Wypracowany</p>
+                <p className="text-3xl font-black tabular-nums">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-              <div className="bg-emerald-600 rounded-[1.5rem] p-8 text-white shadow-xl">
-                <h3 className="text-xs font-black uppercase tracking-widest mb-6 flex items-center gap-3"><HandCoins size={24} /> Rozliczenie Wypłat</h3>
-                <div className="grid grid-cols-2 gap-6 text-center">
-                  <div className="bg-white/10 rounded-2xl p-5 border border-white/10 backdrop-blur-md">
-                    <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Adam</p>
-                    <p className="text-3xl font-black tabular-nums">{stats.payouts.Adam.toLocaleString()}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              <div className="bg-emerald-600 rounded-xl p-6 text-white shadow-lg">
+                <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2"><HandCoins size={18} /> Wypłaty Własne</h3>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="bg-white/10 rounded-xl p-3 border border-white/10 backdrop-blur-md">
+                    <p className="text-[9px] font-black text-emerald-100 uppercase mb-1">Adam</p>
+                    <p className="text-xl font-black tabular-nums">{stats.payouts.Adam.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white/10 rounded-2xl p-5 border border-white/10 backdrop-blur-md">
-                    <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Mateusz</p>
-                    <p className="text-3xl font-black tabular-nums">{stats.payouts.Mateusz.toLocaleString()}</p>
+                  <div className="bg-white/10 rounded-xl p-3 border border-white/10 backdrop-blur-md">
+                    <p className="text-[9px] font-black text-emerald-100 uppercase mb-1">Mateusz</p>
+                    <p className="text-xl font-black tabular-nums">{stats.payouts.Mateusz.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-slate-100 border-4 border-dashed border-slate-200 rounded-[1.5rem] p-8 flex flex-col justify-center items-center text-center">
-                <ShieldCheck size={48} className="text-indigo-600 mb-4" />
-                <h3 className="text-2xl font-black text-slate-800 mb-1">Kopia Bezpieczeństwa</h3>
-                <div className="flex gap-4 mt-6">
-                  <button onClick={handleExport} className="flex items-center gap-3 px-8 py-3 bg-slate-800 text-white rounded-xl font-black text-[10px] uppercase hover:bg-slate-700 shadow-md transition-all"><Download size={18}/> Eksportuj</button>
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 px-8 py-3 bg-white border border-slate-200 text-slate-800 rounded-xl font-black text-[10px] uppercase hover:border-indigo-600 shadow-sm transition-all"><Upload size={18}/> Importuj</button>
+              <div className="bg-slate-100 border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col justify-center items-center text-center">
+                <ShieldCheck size={32} className="text-indigo-600 mb-3" />
+                <h3 className="text-lg font-black text-slate-800 mb-0.5">Kopia Bezpieczeństwa</h3>
+                <div className="flex gap-3 mt-4">
+                  <button onClick={handleExport} className="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white rounded-lg font-black text-[9px] uppercase hover:bg-slate-700 shadow-md transition-all"><Download size={14}/> Eksport</button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-6 py-2 bg-white border border-slate-200 text-slate-800 rounded-lg font-black text-[9px] uppercase hover:border-indigo-600 shadow-sm transition-all"><Upload size={14}/> Import</button>
                   <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
                 </div>
-                {importStatus && <p className="mt-4 text-[10px] font-black text-indigo-600 animate-bounce">{importStatus}</p>}
+                {importStatus && <p className="mt-3 text-[9px] font-black text-indigo-600 animate-bounce">{importStatus}</p>}
               </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden text-left">
-              <div className="p-6 border-b bg-slate-50/50">
-                <h3 className="font-black text-xs uppercase tracking-widest flex items-center gap-3 text-left"><PieChart size={24} className="text-indigo-600" /> Analiza Projektów</h3>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden text-left">
+              <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">
+                <h3 className="font-black text-[10px] uppercase tracking-widest flex items-center gap-2 text-left"><PieChart size={18} className="text-indigo-600" /> Analiza Projektów</h3>
               </div>
               <div className="overflow-x-auto text-left">
                 <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest">
+                  <thead className="bg-slate-50 text-[9px] font-black text-slate-400 border-b uppercase tracking-widest">
                     <tr>
-                      <th className="px-10 py-5 text-left">Klient / Projekt</th>
-                      <th className="px-10 py-5 text-center">Przychód</th>
-                      <th className="px-10 py-5 text-center">Suma Kosztów</th>
-                      <th className="px-10 py-5 text-right">Zysk Końcowy</th>
+                      <th className="px-6 py-3 text-left">Klient / Projekt</th>
+                      <th className="px-6 py-3 text-center">Przychód</th>
+                      <th className="px-6 py-3 text-center">Suma Kosztów</th>
+                      <th className="px-6 py-3 text-right">Zysk Końcowy</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {Object.entries(stats.clientSummary).map(([name, data]) => (
-                      <tr key={name} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-10 py-6 font-black text-base text-slate-800">{name}</td>
-                        <td className="px-10 py-6 text-center text-green-600 font-black text-base">+{data.income.toLocaleString()}</td>
-                        <td className="px-10 py-6 text-center text-red-400 font-bold text-base">-{data.expense.toLocaleString()}</td>
-                        <td className={`px-10 py-6 text-right font-black tabular-nums text-base ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
+                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-3 font-black text-sm text-slate-800">{name}</td>
+                        <td className="px-6 py-3 text-center text-green-600 font-black text-sm">+{data.income.toLocaleString()}</td>
+                        <td className="px-6 py-3 text-center text-red-400 font-bold text-sm">-{data.expense.toLocaleString()}</td>
+                        <td className={`px-6 py-3 text-right font-black tabular-nums text-sm ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
                           {(data.income - data.expense).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
                         </td>
                       </tr>
@@ -540,9 +538,9 @@ const App = () => {
         )}
       </main>
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 20px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; border: 2px solid #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
     </div>
