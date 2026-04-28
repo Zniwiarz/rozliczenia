@@ -68,7 +68,7 @@ const db = getFirestore(app);
 const appId = "finanse-firmowe-v6"; 
 
 const App = () => {
-  // TYMCZASOWO: Tryb podglądu bez logowania
+  // TYMCZASOWO: Tryb podglądu bez logowania (ustawienie testowego usera)
   const [user, setUser] = useState({ email: 'admin@test.pl', uid: 'test-user-id' });
   const [view, setView] = useState('dashboard'); 
   const [activeTab, setActiveTab] = useState('income'); 
@@ -111,7 +111,7 @@ const App = () => {
     return <TagIcon size={12} className="text-slate-300" />;
   };
 
-  // Ładowanie danych
+  // Ładowanie danych z Firestore
   useEffect(() => {
     if (!user) return;
     const unsubTrans = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
@@ -346,7 +346,7 @@ const App = () => {
                             <input autoFocus className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-left" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
                           ) : (
                             <select className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700 focus:border-indigo-500 text-left" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
-                              <option value="">Wybierz...</option>
+                              <option value="">Wybierz klienta...</option>
                               {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
                           )}
@@ -403,12 +403,12 @@ const App = () => {
             </div>
 
             <div className="lg:col-span-7 space-y-4 text-left">
-              <div className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center text-left text-left">
+              <div className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center text-left text-left text-left">
                 <div className="relative flex-1 w-full text-left text-left">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-left" size={20} />
-                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all text-left" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all text-left text-left" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
-                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0 text-left">
+                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0 text-left text-left">
                   <button onClick={() => setDateFilter('all')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Wszystko</button>
                   <button onClick={() => setDateFilter('month')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Miesiąc</button>
                 </div>
@@ -421,7 +421,7 @@ const App = () => {
                       <div className={`p-5 rounded-2xl shrink-0 transition-all group-hover:scale-110 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
                         {item.type === 'income' ? <TrendingUp size={24} /> : (item.status === 'pending' ? <RotateCcw size={24} /> : <CheckCircle2 size={24} />)}
                       </div>
-                      <div className="min-w-0 text-left">
+                      <div className="min-w-0 text-left text-left">
                         <div className="flex items-center gap-3 mb-1 text-left">
                           <span className="font-black text-base text-slate-800 truncate text-left">{item.client}</span>
                           <span className={`text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tight ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
@@ -433,7 +433,7 @@ const App = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-5 shrink-0 text-left">
-                      <div className="text-right text-left text-left">
+                      <div className="text-right text-left text-left text-left">
                         <div className={`font-black text-xl tracking-tighter tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
                           {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
                         </div>
@@ -449,8 +449,8 @@ const App = () => {
                   </div>
                 )) : (
                   <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 text-left text-left">
-                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 text-left"><Search size={40}/></div>
-                    <p className="font-black text-slate-400 uppercase text-xs tracking-[0.3em] text-center">Brak wyników</p>
+                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 text-left text-left"><Search size={40}/></div>
+                    <p className="font-black text-slate-400 uppercase text-xs tracking-[0.3em] text-center text-center">Brak wyników</p>
                   </div>
                 )}
               </div>
@@ -458,28 +458,28 @@ const App = () => {
           </div>
         ) : (
           /* WIDOK RAPORTU */
-          <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-6 text-left text-left text-left">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left text-left">
+          <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-6 text-left text-left text-left text-left">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left text-left text-left">
               <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left">
-                <div className="absolute top-0 right-0 p-6 text-green-50 transition-colors group-hover:text-green-100 text-left"><TrendingUp size={64}/></div>
+                <div className="absolute top-0 right-0 p-6 text-green-50 transition-colors group-hover:text-green-100 text-left text-left text-left"><TrendingUp size={64}/></div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Przychody</p>
-                <p className="text-4xl font-black text-green-600 tabular-nums text-left">+{stats.totalIncome.toLocaleString()} zł</p>
+                <p className="text-4xl font-black text-green-600 tabular-nums text-left text-left text-left">+{stats.totalIncome.toLocaleString()} zł</p>
               </div>
-              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left text-left">
-                <div className="absolute top-0 right-0 p-6 text-red-50 transition-colors group-hover:text-red-100 text-left"><RotateCcw size={64}/></div>
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left text-left text-left text-left">
+                <div className="absolute top-0 right-0 p-6 text-red-50 transition-colors group-hover:text-red-100 text-left text-left"><RotateCcw size={64}/></div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Koszty</p>
-                <p className="text-4xl font-black text-red-500 tabular-nums text-left">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
+                <p className="text-4xl font-black text-red-500 tabular-nums text-left text-left text-left">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
               </div>
-              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center text-left text-left">
+              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center text-left text-left text-left">
                 <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-3 text-left">Zysk Netto Wypracowany</p>
-                <p className="text-5xl font-black tabular-nums text-left">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
+                <p className="text-5xl font-black tabular-nums text-left text-left">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
-              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-100 text-left text-left text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-left text-left">
+              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-100 text-left text-left text-left text-left text-left">
                 <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-4 text-left"><HandCoins size={24} /> Wypłaty Własne</h3>
-                <div className="grid grid-cols-2 gap-8 text-center text-left text-left text-left">
+                <div className="grid grid-cols-2 gap-8 text-center text-left text-left text-left text-left text-left">
                   <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-left text-center">
                     <p className="text-[11px] font-black text-emerald-100 uppercase mb-3 text-left text-center">Adam</p>
                     <p className="text-4xl font-black tabular-nums text-left text-center">{stats.payouts.Adam.toLocaleString()}</p>
@@ -492,39 +492,39 @@ const App = () => {
               </div>
               
               <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] p-10 flex flex-col justify-center items-center text-center text-left">
-                <ShieldCheck size={56} className="text-indigo-600 mb-6" />
-                <h3 className="text-2xl font-black text-slate-800 mb-3 text-left">Archiwizacja Danych</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em] text-left">Kopia Bezpieczeństwa</p>
-                <div className="flex gap-5 text-left text-left text-left">
-                  <button onClick={handleExport} className="flex items-center gap-3 px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase hover:bg-slate-700 transition-all shadow-lg text-left text-left"><Download size={20}/> Eksport</button>
-                  <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm text-left"><Upload size={20}/> Import</button>
+                <ShieldCheck size={56} className="text-indigo-600 mb-6 text-left" />
+                <h3 className="text-2xl font-black text-slate-800 mb-3 text-left text-left">Archiwizacja Danych</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em] text-left text-left text-left">Kopia Bezpieczeństwa</p>
+                <div className="flex gap-5 text-left text-left text-left text-left">
+                  <button onClick={handleExport} className="flex items-center gap-3 px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase hover:bg-slate-700 transition-all shadow-lg text-left text-left text-left text-left"><Download size={20}/> Eksport</button>
+                  <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm text-left text-left"><Upload size={20}/> Import</button>
                   <input type="file" ref={fileInputRef} className="hidden text-left" accept=".json" onChange={handleImport} />
                 </div>
-                {importStatus && <p className="mt-6 text-xs font-black text-indigo-600 animate-bounce text-left">{importStatus}</p>}
+                {importStatus && <p className="mt-6 text-xs font-black text-indigo-600 animate-bounce text-left text-left text-left">{importStatus}</p>}
               </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden text-left text-left">
-              <div className="p-8 border-b bg-slate-50/50 flex items-center justify-between text-left text-left">
-                <h3 className="font-black text-xs uppercase tracking-[0.3em] flex items-center gap-4 text-left"><PieChart size={24} className="text-indigo-600" /> Analiza Projektów</h3>
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden text-left text-left text-left text-left">
+              <div className="p-8 border-b bg-slate-50/50 flex items-center justify-between text-left text-left text-left">
+                <h3 className="font-black text-xs uppercase tracking-[0.3em] flex items-center gap-4 text-left text-left text-left text-left"><PieChart size={24} className="text-indigo-600" /> Analiza Projektów</h3>
               </div>
-              <div className="overflow-x-auto text-left text-left">
-                <table className="w-full text-left text-left">
-                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest text-left text-left">
+              <div className="overflow-x-auto text-left text-left text-left text-left text-left">
+                <table className="w-full text-left text-left text-left">
+                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest text-left text-left text-left text-left text-left">
                     <tr>
                       <th className="px-10 py-5 text-left">Projekt</th>
-                      <th className="px-10 py-5 text-center text-left">Przychód</th>
-                      <th className="px-10 py-5 text-center text-left">Koszt</th>
-                      <th className="px-10 py-5 text-right text-left text-left">Bilans</th>
+                      <th className="px-10 py-5 text-center text-left text-left text-left">Przychód</th>
+                      <th className="px-10 py-5 text-center text-left text-left text-left text-left">Koszt</th>
+                      <th className="px-10 py-5 text-right text-left text-left text-left text-left">Bilans</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-left text-left">
+                  <tbody className="divide-y divide-slate-100 text-left text-left text-left text-left">
                     {Object.entries(stats.clientSummary).map(([name, data]) => (
-                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group text-left text-left">
-                        <td className="px-10 py-6 font-black text-slate-800 text-left text-left">{name}</td>
-                        <td className="px-10 py-6 text-center text-green-600 font-black text-left text-left">+{data.income.toLocaleString()}</td>
-                        <td className="px-10 py-6 text-center text-red-400 font-bold text-left text-left">-{data.expense.toLocaleString()}</td>
-                        <td className={`px-10 py-6 text-right font-black tabular-nums text-left text-left ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
+                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group text-left text-left text-left text-left text-left text-left">
+                        <td className="px-10 py-6 font-black text-slate-800 text-left text-left text-left text-left">{name}</td>
+                        <td className="px-10 py-6 text-center text-green-600 font-black text-left text-left text-left text-left">+{data.income.toLocaleString()}</td>
+                        <td className="px-10 py-6 text-center text-red-400 font-bold text-left text-left text-left text-left text-left">-{data.expense.toLocaleString()}</td>
+                        <td className={`px-10 py-6 text-right font-black tabular-nums text-left text-left text-left text-left text-left ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
                           {(data.income - data.expense).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
                         </td>
                       </tr>
