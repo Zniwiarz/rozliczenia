@@ -8,8 +8,7 @@ import {
   doc, 
   serverTimestamp,
   deleteDoc,
-  updateDoc,
-  setDoc
+  updateDoc
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -20,28 +19,19 @@ import {
 } from 'firebase/auth';
 import { 
   Building2, 
-  TrendingDown, 
   TrendingUp, 
-  User, 
   Trash2, 
   Briefcase,
   Users,
-  LayoutDashboard,
   Plus, 
-  ArrowRightLeft,
   Tag as TagIcon,
   Fuel,
   Package,
   Wrench,
   FileText,
   Banknote,
-  CheckCircle2,
-  Clock,
-  BarChart3,
   Gem,
   PieChart,
-  Square,
-  CheckSquare,
   HandCoins,
   RotateCcw,
   Download,
@@ -54,21 +44,13 @@ import {
 
 // --- TWOJA KONFIGURACJA FIREBASE ---
 const firebaseConfig = {
-
   apiKey: "AIzaSyAr_avRX_H4TKcIVQ2g2E57VH42k5KvPb4",
-
   authDomain: "rozliczenia-bb311.firebaseapp.com",
-
   projectId: "rozliczenia-bb311",
-
   storageBucket: "rozliczenia-bb311.firebasestorage.app",
-
   messagingSenderId: "368403149682",
-
   appId: "1:368403149682:web:31d02662801b55db7763eb"
-
 };
-
 
 // Inicjalizacja usług Firebase
 const app = initializeApp(firebaseConfig);
@@ -133,7 +115,7 @@ const App = () => {
       if (error.code === 'auth/unauthorized-domain') {
         setAuthError("Domena nieuprawniona. Dodaj swój adres Vercel w Firebase Console -> Auth -> Settings -> Authorized domains.");
       } else {
-        setAuthError("Wystąpił błąd logowania. Spróbuj ponownie.");
+        setAuthError("Błąd logowania. Spróbuj ponownie.");
       }
     }
   };
@@ -197,10 +179,10 @@ const App = () => {
         for (const trans of data.transactions) {
           await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), { ...trans, timestamp: serverTimestamp() });
         }
-        setImportStatus("Import zakończony!");
+        setImportStatus("Zakończono!");
         setTimeout(() => setImportStatus(null), 3000);
       } catch (err) {
-        setImportStatus("Błąd pliku!");
+        setImportStatus("Błąd!");
         setTimeout(() => setImportStatus(null), 3000);
       }
     };
@@ -277,7 +259,7 @@ const App = () => {
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse uppercase text-left tracking-widest">Wczytywanie...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-6 font-sans antialiased text-left">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-6 font-sans antialiased text-left text-left">
       <header className="bg-white border-b sticky top-0 z-40 shadow-sm text-left">
         <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-2 text-left">
           <div className="flex items-center gap-2"><div className="bg-indigo-600 p-1 rounded-lg text-white"><Building2 size={16} /></div><h1 className="text-sm font-black tracking-tight uppercase">Finanse</h1></div>
@@ -294,20 +276,20 @@ const App = () => {
       <main className="max-w-4xl mx-auto px-3 mt-3 text-left">
         {view === 'dashboard' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-left">
-            <div className="lg:col-span-5 space-y-3">
-              <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+            <div className="lg:col-span-5 space-y-3 text-left">
+              <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden text-left">
                 <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest text-left">Saldo w kasie</p>
                 <h2 className="text-2xl font-black mt-0.5 mb-4 text-left">{stats.availableBalance.toFixed(2)} <span className="text-[9px] font-medium text-slate-500">PLN</span></h2>
-                <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="grid grid-cols-2 gap-2 text-center text-left">
                   <div className="bg-white/5 rounded-lg p-2 border border-white/5"><p className="text-[8px] uppercase font-bold text-orange-400 mb-0.5">Mateusz (do zwrotu)</p><p className="text-sm font-bold">{stats.pendingDebts.Mateusz.toFixed(0)}</p></div>
                   <div className="bg-white/5 rounded-lg p-2 border border-white/5"><p className="text-[8px] uppercase font-bold text-orange-400 mb-0.5">Adam (do zwrotu)</p><p className="text-sm font-bold">{stats.pendingDebts.Adam.toFixed(0)}</p></div>
                 </div>
               </div>
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-left">
-                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Users size={12} className="text-indigo-500" /> Saldo Projektów</h3>
+                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 text-left"><Users size={12} className="text-indigo-500" /> Saldo Projektów</h3>
                 <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
                   {Object.entries(stats.clientSummary).map(([name, data]) => (
-                    <div key={name} className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 transition-all hover:border-indigo-200">
+                    <div key={name} className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 transition-all hover:border-indigo-200 text-left">
                       <p className="text-[11px] font-bold text-slate-800 truncate text-left">{name}</p>
                       <span className={`font-black text-[11px] ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-500'}`}>{(data.income - data.expense).toFixed(2)}</span>
                     </div>
@@ -316,18 +298,18 @@ const App = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-7 space-y-3">
+            <div className="lg:col-span-7 space-y-3 text-left">
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left">
-                <div className="flex p-0.5 bg-slate-50 border-b">
+                <div className="flex p-0.5 bg-slate-50 border-b text-left">
                   <button onClick={() => setActiveTab('income')} className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
                   <button onClick={() => setActiveTab('expense')} className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt / Wypłata</button>
                 </div>
                 <form onSubmit={handleAddTransaction} className="p-4 space-y-3 text-left">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
-                    <div className="space-y-1 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Klient</label><div className="flex gap-1.5">{isAddingNewClient ? (<input autoFocus className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-indigo-100 outline-none font-medium text-left" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />) : (<select className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none bg-white font-medium text-left" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required><option value="">Wybierz...</option>{clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select>)}<button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-1.5 rounded-lg bg-slate-50 text-indigo-600 border border-slate-200"><Plus size={14} /></button></div></div>
-                    <div className="space-y-1 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Źródło</label>{activeTab === 'income' ? (<div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700 font-bold text-[9px] uppercase"><Building2 size={13} /> Konto Firmowe</div>) : (<div className="flex flex-col gap-1.5 text-left"><div className="flex p-0.5 bg-slate-100 rounded-lg gap-0.5"><button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button><button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button></div>{!formData.isCompanyFunds && (<div className="flex gap-1 p-0.5 bg-orange-50 rounded-lg border border-orange-100">{staff.map(name => (<button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${formData.person === name ? 'bg-white text-orange-600 shadow-xs' : 'text-orange-300'}`}>{name}</button>))}</div>)}</div>)}</div>
-                    <div className="space-y-1 md:col-span-2 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Kategoria i Opis</label><div className="flex flex-wrap gap-1 mb-2">{(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (<button key={tag.name} type="button" onClick={() => selectTag(tag.name)} className={`px-2 py-1 rounded-lg text-[9px] font-bold border flex items-center gap-1.5 ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>{tag.icon} {tag.name}</button>))}</div><input className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none text-left" placeholder="Co to za operacja?" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required /></div>
-                    <div className="space-y-1 md:col-span-2 text-left"><label className="text-[9px] font-black text-slate-400 uppercase text-left">Kwota</label><div className="flex gap-2 text-left"><div className="relative flex-1 text-left"><input type="number" step="0.01" className="w-full px-3 py-1.5 rounded-lg border border-slate-200 outline-none font-black text-lg bg-slate-50/50 text-left" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required /><span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-300 text-xs">zł</span></div><button type="submit" className={`px-6 rounded-lg text-white font-black text-[10px] uppercase shadow-md ${activeTab === 'income' ? 'bg-green-600' : 'bg-red-600'}`}>Zapisz</button></div></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left text-left">
+                    <div className="space-y-1 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Klient</label><div className="flex gap-1.5 text-left">{isAddingNewClient ? (<input autoFocus className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-indigo-100 outline-none font-medium text-left" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />) : (<select className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none bg-white font-medium text-left" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required><option value="">Wybierz...</option>{clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select>)}<button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-1.5 rounded-lg bg-slate-50 text-indigo-600 border border-slate-200"><Plus size={14} /></button></div></div>
+                    <div className="space-y-1 text-left text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Źródło</label>{activeTab === 'income' ? (<div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700 font-bold text-[9px] uppercase"><Building2 size={13} /> Konto Firmowe</div>) : (<div className="flex flex-col gap-1.5 text-left"><div className="flex p-0.5 bg-slate-100 rounded-lg gap-0.5"><button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button><button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button></div>{!formData.isCompanyFunds && (<div className="flex gap-1 p-0.5 bg-orange-50 rounded-lg border border-orange-100">{staff.map(name => (<button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${formData.person === name ? 'bg-white text-orange-600 shadow-xs' : 'text-orange-300'}`}>{name}</button>))}</div>)}</div>)}</div>
+                    <div className="space-y-1 md:col-span-2 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Kategoria i Opis</label><div className="flex flex-wrap gap-1 mb-2 text-left">{(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (<button key={tag.name} type="button" onClick={() => selectTag(tag.name)} className={`px-2 py-1 rounded-lg text-[9px] font-bold border flex items-center gap-1.5 ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>{tag.icon} {tag.name}</button>))}</div><input className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none text-left" placeholder="Co to za operacja?" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required /></div>
+                    <div className="space-y-1 md:col-span-2 text-left"><label className="text-[9px] font-black text-slate-400 uppercase text-left">Kwota</label><div className="flex gap-2 text-left text-left"><div className="relative flex-1 text-left"><input type="number" step="0.01" className="w-full px-3 py-1.5 rounded-lg border border-slate-200 outline-none font-black text-lg bg-slate-50/50 text-left" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required /><span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-300 text-xs">zł</span></div><button type="submit" className={`px-6 rounded-lg text-white font-black text-[10px] uppercase shadow-md ${activeTab === 'income' ? 'bg-green-600' : 'bg-red-600'}`}>Zapisz</button></div></div>
                   </div>
                 </form>
               </div>
@@ -339,7 +321,7 @@ const App = () => {
                       <div className={`p-2 rounded-lg shrink-0 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400')}`}><TrendingUp size={15} /></div>
                       <div className="min-w-0 text-left"><div className="flex items-center gap-1.5 font-bold text-[11px] text-left"><span className="text-slate-800 truncate text-left">{item.client}</span><span className={`text-[7px] px-1 py-0.5 rounded-md uppercase shrink-0 ${item.person === 'Firma' ? 'bg-indigo-50 text-indigo-500' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span></div><p className="text-[9px] text-slate-400 flex items-center gap-1 truncate uppercase text-left">{getCategoryIcon(item.description)} {item.description}</p></div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0 text-left"><div className="text-right text-left"><div className={`font-black text-xs ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-500')}`}>{item.amount.toFixed(2)}</div>{item.status === 'pending' ? (<button onClick={() => settleTransaction(item.id, 'settled')} className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded uppercase shadow-xs">Rozlicz</button>) : (item.person !== 'Firma' && item.type === 'expense' && !['wypłata', 'inwestycja'].includes(item.description.toLowerCase()) && (<button onClick={() => settleTransaction(item.id, 'pending')} className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[7px] font-bold rounded uppercase flex items-center gap-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><RotateCcw size={8} /> Cofnij</button>))}</div><button onClick={() => handleDelete('transactions', item.id)} className="p-1 text-slate-100 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-colors"><Trash2 size={13} /></button></div>
+                    <div className="flex items-center gap-3 shrink-0 text-left"><div className="text-right text-left text-left"><div className={`font-black text-xs ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-500')}`}>{item.amount.toFixed(2)}</div>{item.status === 'pending' ? (<button onClick={() => settleTransaction(item.id, 'settled')} className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded uppercase shadow-xs">Rozlicz</button>) : (item.person !== 'Firma' && item.type === 'expense' && !['wypłata', 'inwestycja'].includes(item.description.toLowerCase()) && (<button onClick={() => settleTransaction(item.id, 'pending')} className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[7px] font-bold rounded uppercase flex items-center gap-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><RotateCcw size={8} /> Cofnij</button>))}</div><button onClick={() => handleDelete('transactions', item.id)} className="p-1 text-slate-100 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-colors"><Trash2 size={13} /></button></div>
                   </div>
                 ))}
               </div>
@@ -347,19 +329,19 @@ const App = () => {
           </div>
         ) : (
           /* WIDOK RAPORTU */
-          <div className="space-y-4 animate-in fade-in duration-300 text-left">
+          <div className="space-y-4 animate-in fade-in duration-300 text-left text-left">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-left text-left">
               <div className="bg-white p-4 rounded-2xl border border-slate-200 text-left"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-left">Całkowity Przychód</p><p className="text-xl font-black text-green-600">+{stats.totalIncome.toFixed(0)}</p></div>
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 text-left"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1 tracking-widest">Koszty Operacyjne</p><p className="text-xl font-black text-red-500">-{stats.operatingExpenses.toFixed(0)}</p></div>
-              <div className="bg-indigo-600 p-4 rounded-2xl text-white border border-indigo-500 md:col-span-2 shadow-md text-left text-left"><p className="text-[8px] font-bold text-indigo-200 uppercase mb-1 tracking-widest text-left">Zysk Netto Wypracowany</p><p className="text-xl font-black">{stats.historicalProfit.toFixed(0)} PLN</p></div>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 text-left"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-left">Koszty Operacyjne</p><p className="text-xl font-black text-red-500">-{stats.operatingExpenses.toFixed(0)}</p></div>
+              <div className="bg-indigo-600 p-4 rounded-2xl text-white border border-indigo-500 md:col-span-2 shadow-md text-left text-left text-left"><p className="text-[8px] font-bold text-indigo-200 uppercase mb-1 tracking-widest text-left">Zysk Netto Wypracowany</p><p className="text-xl font-black">{stats.historicalProfit.toFixed(0)} PLN</p></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-              <div className="bg-emerald-600 rounded-2xl p-4 text-white text-left text-left"><h3 className="text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-2"><HandCoins size={14} /> Wypłaty Własne</h3><div className="grid grid-cols-2 gap-3 text-center"><div className="bg-white/10 rounded-xl p-2 border border-white/10 text-center"><p className="text-[8px] font-bold text-emerald-100 uppercase">Adam:</p><p className="text-lg font-black">{stats.personalPayouts.Adam.toFixed(0)}</p></div><div className="bg-white/10 rounded-xl p-2 border border-white/10 text-center"><p className="text-[8px] font-bold text-emerald-100 uppercase">Mateusz:</p><p className="text-lg font-black">{stats.personalPayouts.Mateusz.toFixed(0)}</p></div></div></div>
-              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col justify-center items-center text-left text-left"><h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5 mb-2"><ShieldCheck size={14} className="text-indigo-600" /> Backup</h3><div className="flex gap-2 text-left"><button onClick={handleExport} className="p-2 bg-slate-800 text-white rounded-lg shadow-sm hover:bg-slate-700 transition-all"><Download size={14} /></button><button onClick={() => fileInputRef.current.click()} className="p-2 bg-white border border-slate-200 text-slate-800 rounded-lg hover:border-indigo-600 shadow-xs transition-all"><Upload size={14} /></button><input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} /></div>{importStatus && <p className="text-[8px] font-black uppercase text-center mt-2 text-indigo-600">{importStatus}</p>}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-left">
+              <div className="bg-emerald-600 rounded-2xl p-4 text-white text-left text-left"><h3 className="text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-2"><HandCoins size={14} /> Wypłaty Własne</h3><div className="grid grid-cols-2 gap-3 text-center text-left"><div className="bg-white/10 rounded-xl p-2 border border-white/10 text-center"><p className="text-[8px] font-bold text-emerald-100 uppercase">Adam:</p><p className="text-lg font-black">{stats.personalPayouts.Adam.toFixed(0)}</p></div><div className="bg-white/10 rounded-xl p-2 border border-white/10 text-center"><p className="text-[8px] font-bold text-emerald-100 uppercase">Mateusz:</p><p className="text-lg font-black">{stats.personalPayouts.Mateusz.toFixed(0)}</p></div></div></div>
+              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col justify-center items-center text-left text-left text-left"><h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5 mb-2 text-left"><ShieldCheck size={14} className="text-indigo-600" /> Backup</h3><div className="flex gap-2 text-left text-left"><button onClick={handleExport} className="p-2 bg-slate-800 text-white rounded-lg shadow-sm hover:bg-slate-700 transition-all text-left"><Download size={14} /></button><button onClick={() => fileInputRef.current.click()} className="p-2 bg-white border border-slate-200 text-slate-800 rounded-lg hover:border-indigo-600 shadow-xs transition-all text-left"><Upload size={14} /></button><input type="file" ref={fileInputRef} className="hidden text-left" accept=".json" onChange={handleImport} /></div>{importStatus && <p className="text-[8px] font-black uppercase text-center mt-2 text-indigo-600 text-left">{importStatus}</p>}</div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left text-left">
-              <div className="p-3 border-b bg-slate-50/50 flex items-center justify-between text-left"><h3 className="font-black text-[10px] uppercase tracking-widest flex items-center gap-2"><PieChart size={14} className="text-indigo-600" /> Podsumowanie Projektów</h3></div>
-              <div className="overflow-x-auto text-left text-left"><table className="w-full text-left text-[11px] min-w-[400px] text-left text-left"><thead className="bg-slate-50 text-[8px] uppercase font-bold text-slate-400 border-b text-left"><tr><th className="px-4 py-2 text-left">Projekt</th><th className="px-4 py-2 text-left">Przychody</th><th className="px-4 py-2 text-left">Koszty</th><th className="px-4 py-2 text-right">Saldo</th></tr></thead><tbody className="divide-y divide-slate-100 text-left text-left">{Object.entries(stats.clientSummary).map(([name, data]) => (<tr key={name} className="hover:bg-slate-50/50 transition-colors text-left"><td className="px-4 py-2 font-bold text-slate-800 truncate max-w-[120px] text-left">{name}</td><td className="px-4 py-2 text-green-600 font-bold">+{data.income.toFixed(0)}</td><td className="px-4 py-2 text-red-400">-{data.expense.toFixed(0)}</td><td className={`px-4 py-2 text-right font-black ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>{(data.income - data.expense).toFixed(0)}</td></tr>))}</tbody></table></div></div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left text-left text-left text-left">
+              <div className="p-3 border-b bg-slate-50/50 flex items-center justify-between text-left"><h3 className="font-black text-[10px] uppercase tracking-widest flex items-center gap-2 text-left"><PieChart size={14} className="text-indigo-600" /> Podsumowanie Projektów</h3></div>
+              <div className="overflow-x-auto text-left text-left text-left text-left"><table className="w-full text-left text-[11px] min-w-[400px] text-left text-left text-left text-left text-left"><thead className="bg-slate-50 text-[8px] uppercase font-bold text-slate-400 border-b text-left text-left"><tr><th className="px-4 py-2 text-left">Projekt</th><th className="px-4 py-2 text-left">Przychody</th><th className="px-4 py-2 text-left">Koszty</th><th className="px-4 py-2 text-right text-left">Saldo</th></tr></thead><tbody className="divide-y divide-slate-100 text-left text-left text-left text-left">{Object.entries(stats.clientSummary).map(([name, data]) => (<tr key={name} className="hover:bg-slate-50/50 transition-colors text-left text-left text-left text-left"><td className="px-4 py-2 font-bold text-slate-800 truncate max-w-[120px] text-left">{name}</td><td className="px-4 py-2 text-green-600 font-bold text-left">+{data.income.toFixed(0)}</td><td className="px-4 py-2 text-red-400 text-left">-{data.expense.toFixed(0)}</td><td className={`px-4 py-2 text-right font-black text-left ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>{(data.income - data.expense).toFixed(0)}</td></tr>))}</tbody></table></div></div>
           </div>
         )}
       </main>
