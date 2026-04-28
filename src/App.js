@@ -22,7 +22,6 @@ import {
   TrendingUp, 
   Trash2, 
   Briefcase,
-  Users,
   Plus, 
   Tag as TagIcon,
   Fuel,
@@ -46,12 +45,9 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-// --- KONFIGURACJA DOSTĘPU (BIAŁA LISTA) ---
-const ALLOWED_EMAILS = [
-  "mateukokaczmarczyk@gmail.com"
-];
+// --- KONFIGURACJA DOSTĘPU ---
+const ALLOWED_EMAILS = ["mateukokaczmarczyk@gmail.com"];
 
-// --- TWOJA KONFIGURACJA FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyAr_avRX_H4TKcIVQ2g2E57VH42k5KvPb4",
   authDomain: "rozliczenia-bb311.firebaseapp.com",
@@ -102,21 +98,7 @@ const App = () => {
     { name: 'Faktura', icon: <FileText size={12} />, color: '#6366f1' }   
   ];
 
-  // --- FUNKCJE OBSŁUGI ---
-
-  const loginWithGoogle = async () => {
-    setAuthError(null);
-    const provider = new GoogleAuthProvider();
-    try { 
-      const result = await signInWithPopup(auth, provider);
-      if (!ALLOWED_EMAILS.includes(result.user.email)) {
-        await signOut(auth);
-        setAuthError(`Adres ${result.user.email} nie ma uprawnień do tego systemu.`);
-      }
-    } catch (err) { 
-      setAuthError("Wystąpił błąd podczas logowania."); 
-    }
-  };
+  // --- FUNKCJE (ZDEFINIOWANE PRZED JAKIMKOLWIEK RETURNEM) ---
 
   const handleExport = useCallback(() => {
     const backupData = {
@@ -152,17 +134,26 @@ const App = () => {
         }
         setImportStatus("Zakończono!");
         setTimeout(() => setImportStatus(null), 3000);
-      } catch (err) {
-        setImportStatus("Błąd pliku!");
-      }
+      } catch (err) { setImportStatus("Błąd pliku!"); }
     };
     reader.readAsText(file);
   }, [clients, user]);
 
+  const loginWithGoogle = async () => {
+    setAuthError(null);
+    const provider = new GoogleAuthProvider();
+    try { 
+      const result = await signInWithPopup(auth, provider);
+      if (!ALLOWED_EMAILS.includes(result.user.email)) {
+        await signOut(auth);
+        setAuthError(`Adres ${result.user.email} nie ma uprawnień.`);
+      }
+    } catch (err) { setAuthError("Błąd logowania."); }
+  };
+
   const handleAddOrEdit = async (e) => {
     e.preventDefault();
     if (!user || !formData.client || !formData.amount || !formData.description) return;
-    
     const descLower = formData.description.toLowerCase();
     const data = {
       client: formData.client,
@@ -174,7 +165,6 @@ const App = () => {
       status: (activeTab === 'expense' && !formData.isCompanyFunds && !['inwestycja', 'wypłata'].includes(descLower)) ? 'pending' : 'settled',
       person: (activeTab === 'income') ? 'Firma' : (formData.isCompanyFunds ? 'Firma' : formData.person)
     };
-
     try {
       if (editingTransaction) {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', editingTransaction.id), data);
@@ -211,17 +201,15 @@ const App = () => {
     return <TagIcon size={12} className="text-slate-300" />;
   };
 
-  // --- HOOKI (AUTH I DANE) ---
+  // --- HOOKI ---
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => { 
       if (u && !ALLOWED_EMAILS.includes(u.email)) {
         signOut(auth);
-        setAuthError(`Adres ${u.email} nie ma uprawnień do tego systemu.`);
+        setAuthError(`Adres ${u.email} nie ma uprawnień.`);
         setUser(null);
-      } else {
-        setUser(u);
-      }
+      } else { setUser(u); }
       setLoading(false); 
     });
     return () => unsubscribe();
@@ -279,29 +267,18 @@ const App = () => {
     };
   }, [transactions]);
 
-  // --- WIDOKI ---
+  // --- RENDERING ---
 
-  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse text-lg tracking-widest"><Building2 size={48} className="mb-4" /> Weryfikacja...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Weryfikacja...</div>;
 
   if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 text-center space-y-8 border border-slate-100">
-          <div className="bg-indigo-600 w-24 h-24 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-indigo-200 shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-500"><Building2 size={48} /></div>
-          <div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">System Finansowy</h2>
-            <p className="text-slate-500 mt-2 font-bold uppercase text-[10px] tracking-widest text-indigo-600">Autoryzacja Google</p>
-          </div>
-          {authError && (
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3 text-left animate-in fade-in slide-in-from-top-2">
-              <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
-              <p className="text-xs text-red-600 font-bold leading-relaxed">{authError}</p>
-            </div>
-          )}
-          <button onClick={loginWithGoogle} className="w-full py-5 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-4 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-slate-200">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="G" />
-            Zaloguj przez Google
-          </button>
+          <div className="bg-indigo-600 w-24 h-24 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-indigo-200 shadow-2xl rotate-3"><Building2 size={48} /></div>
+          <div><h2 className="text-3xl font-black text-slate-800 tracking-tight">System Finansowy</h2><p className="text-slate-500 mt-2 font-bold uppercase text-[10px] tracking-widest text-indigo-600">Autoryzacja Google</p></div>
+          {authError && <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3 text-left"><AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} /><p className="text-xs text-red-600 font-bold leading-relaxed">{authError}</p></div>}
+          <button onClick={loginWithGoogle} className="w-full py-5 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-4 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="G" /> Zaloguj Google</button>
         </div>
       </div>
     );
@@ -322,7 +299,7 @@ const App = () => {
             </nav>
             <div className="flex items-center gap-3 pl-6 border-l border-slate-200">
                <div className="hidden sm:block text-right">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Użytkownik:</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Zalogowany:</p>
                  <p className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{user.email}</p>
                </div>
                <button onClick={() => signOut(auth)} className="p-2.5 text-slate-400 hover:text-red-500 bg-slate-50 rounded-xl transition-colors"><LogOut size={20} /></button>
@@ -340,11 +317,11 @@ const App = () => {
                 <h2 className="text-4xl font-black mb-6 tracking-tight tabular-nums">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1">PLN</span></h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1 text-left">Mateusz (do zwrotu)</p>
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Mateusz (do zwrotu)</p>
                     <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Mateusz.toFixed(0)} zł</p>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-left">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1 text-left">Adam (do zwrotu)</p>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Adam (do zwrotu)</p>
                     <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Adam.toFixed(0)} zł</p>
                   </div>
                 </div>
@@ -358,7 +335,7 @@ const App = () => {
                 <form onSubmit={handleAddOrEdit} className="p-8 space-y-6">
                   {editingTransaction && (
                     <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center justify-between">
-                      <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Tryb Edycji Historii</span>
+                      <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Edycja</span>
                       <button type="button" onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={16}/></button>
                     </div>
                   )}
@@ -368,18 +345,18 @@ const App = () => {
                         <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Klient / Projekt</label>
                         <div className="flex gap-2">
                           {isAddingNewClient ? (
-                            <input autoFocus className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
+                            <input autoFocus className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-indigo-200 outline-none font-bold" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
                           ) : (
-                            <select className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700 focus:border-indigo-500" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
+                            <select className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
                               <option value="">Wybierz klienta...</option>
                               {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
                           )}
-                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3.5 rounded-xl bg-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><Plus size={18} /></button>
+                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3.5 rounded-xl bg-slate-100 text-indigo-600 border border-slate-200 hover:bg-indigo-600 hover:text-white transition-all"><Plus size={18} /></button>
                         </div>
                       </div>
                       <div className="space-y-1.5 text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Osoba</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
                         {activeTab === 'income' ? (
                           <div className="flex items-center gap-3 px-4 py-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-black text-xs"><Building2 size={18} /> Konto Firmowe</div>
                         ) : (
@@ -389,7 +366,7 @@ const App = () => {
                               <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500'}`}>Prywatne</button>
                             </div>
                             {!formData.isCompanyFunds && (
-                              <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in zoom-in-95">
+                              <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100">
                                 {staff.map(name => (
                                   <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
                                 ))}
@@ -401,23 +378,23 @@ const App = () => {
                     </div>
 
                     <div className="space-y-1.5 text-left">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Szczegóły</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Opis transakcji</label>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (
-                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-4 py-2 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
+                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-4 py-2 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>{tag.icon} {tag.name}</button>
                         ))}
                       </div>
-                      <input className="w-full px-4 py-4 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold" placeholder="Opisz operację..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
+                      <input className="w-full px-4 py-4 text-sm rounded-xl border border-slate-200 outline-none font-bold focus:border-indigo-500" placeholder="Co to za operacja?" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
                     </div>
 
                     <div className="space-y-1.5 text-left">
                       <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kwota</label>
                       <div className="flex gap-4">
                         <div className="relative flex-1">
-                          <input type="number" step="0.01" className="w-full pl-5 pr-14 py-5 rounded-[1.5rem] border-4 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all tracking-tighter" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
+                          <input type="number" step="0.01" className="w-full pl-5 pr-14 py-5 rounded-[1.5rem] border-4 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
                           <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300 text-lg">zł</span>
                         </div>
-                        <button type="submit" className={`px-10 rounded-[1.5rem] text-white font-black text-sm uppercase shadow-2xl transition-all hover:scale-[1.03] active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
+                        <button type="submit" className={`px-10 rounded-[1.5rem] text-white font-black text-sm uppercase shadow-2xl transition-all hover:scale-[1.03] ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
                           {editingTransaction ? 'Zapisz' : 'Dodaj'}
                         </button>
                       </div>
@@ -431,7 +408,7 @@ const App = () => {
               <div className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center">
                 <div className="relative flex-1 w-full text-left">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                 <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0">
                   <button onClick={() => setDateFilter('all')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Wszystko</button>
@@ -441,19 +418,19 @@ const App = () => {
 
               <div className="space-y-4 max-h-[750px] overflow-y-auto pr-3 custom-scrollbar text-left">
                 {filteredTransactions.length > 0 ? filteredTransactions.map((item) => (
-                  <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm hover:shadow-xl">
+                  <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm">
                     <div className="flex items-center gap-6 min-w-0">
-                      <div className={`p-5 rounded-2xl shrink-0 transition-all group-hover:scale-110 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
+                      <div className={`p-5 rounded-2xl shrink-0 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
                         {item.type === 'income' ? <TrendingUp size={24} /> : (item.status === 'pending' ? <RotateCcw size={24} /> : <CheckCircle2 size={24} />)}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="font-black text-base text-slate-800 truncate">{item.client}</span>
-                          <span className={`text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tight ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
+                        <div className="flex items-center gap-3 mb-1 font-black text-base text-slate-800">
+                          <span className="truncate">{item.client}</span>
+                          <span className={`text-[9px] px-2.5 py-1 rounded-lg uppercase tracking-tight ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <p className="text-xs text-slate-400 flex items-center gap-2 truncate uppercase font-black">{getCategoryIcon(item.description)} {item.description}</p>
-                          <span className="text-[11px] text-slate-300 font-bold flex items-center gap-1.5"><Calendar size={12}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
+                        <div className="flex items-center gap-4 text-xs text-slate-400 font-bold uppercase">
+                          <p className="flex items-center gap-2 truncate">{getCategoryIcon(item.description)} {item.description}</p>
+                          <span className="flex items-center gap-1.5"><Calendar size={12}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
                         </div>
                       </div>
                     </div>
@@ -482,26 +459,27 @@ const App = () => {
             </div>
           </div>
         ) : (
+          /* WIDOK RAPORTU */
           <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-6 text-left">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-6 text-green-50 transition-colors group-hover:text-green-100"><TrendingUp size={64}/></div>
+                <div className="absolute top-0 right-0 p-6 text-green-50 group-hover:text-green-100 transition-colors"><TrendingUp size={64}/></div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Przychody</p>
                 <p className="text-4xl font-black text-green-600 tabular-nums">+{stats.totalIncome.toLocaleString()} zł</p>
               </div>
               <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-6 text-red-50 transition-colors group-hover:text-red-100"><RotateCcw size={64}/></div>
+                <div className="absolute top-0 right-0 p-6 text-red-50 group-hover:text-red-100 transition-colors"><RotateCcw size={64}/></div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Koszty</p>
                 <p className="text-4xl font-black text-red-500 tabular-nums">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
               </div>
-              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center">
+              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl md:col-span-2 flex flex-col justify-center">
                 <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-3">Zysk Netto Wypracowany</p>
                 <p className="text-5xl font-black tabular-nums">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-100">
+              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl">
                 <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-4"><HandCoins size={24} /> Wypłaty Własne</h3>
                 <div className="grid grid-cols-2 gap-8 text-center">
                   <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md">
@@ -516,8 +494,8 @@ const App = () => {
               </div>
               <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] p-10 flex flex-col justify-center items-center text-center">
                 <ShieldCheck size={56} className="text-indigo-600 mb-6" />
-                <h3 className="text-2xl font-black text-slate-800 mb-3">Archiwizacja Danych</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em]">Kopia Bezpieczeństwa</p>
+                <h3 className="text-2xl font-black text-slate-800 mb-3 text-left">Backup Danych</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em] text-left">Bezpieczeństwo Systemu</p>
                 <div className="flex gap-5">
                   <button onClick={handleExport} className="flex items-center gap-3 px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase hover:bg-slate-700 transition-all shadow-lg"><Download size={20}/> Eksport</button>
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm"><Upload size={20}/> Import</button>
