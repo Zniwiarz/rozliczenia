@@ -39,7 +39,11 @@ import {
   ShieldCheck,
   LogOut,
   AlertCircle,
-  X
+  X,
+  Search,
+  Calendar,
+  Edit2,
+  Filter
 } from 'lucide-react';
 
 // --- TWOJA KONFIGURACJA FIREBASE ---
@@ -52,12 +56,9 @@ const firebaseConfig = {
   appId: "1:368403149682:web:31d02662801b55db7763eb"
 };
 
-// Inicjalizacja usług Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Stały identyfikator dla bazy danych Twojej firmy
 const appId = "finanse-firmowe-v6"; 
 
 const App = () => {
@@ -71,6 +72,13 @@ const App = () => {
   const [importStatus, setImportStatus] = useState(null);
   const [authError, setAuthError] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Filtrowanie
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('all'); // all, today, month, year
+
+  // Edycja
+  const [editingTransaction, setEditingTransaction] = useState(null);
   
   const [formData, setFormData] = useState({
     client: '',
@@ -81,11 +89,7 @@ const App = () => {
   });
 
   const staff = ['Adam', 'Mateusz'];
-  
-  const quickTagsIncome = [
-    { name: 'Zaliczka', icon: <Banknote size={12} />, color: '#10b981' } 
-  ];
-
+  const quickTagsIncome = [{ name: 'Zaliczka', icon: <Banknote size={12} />, color: '#10b981' }];
   const quickTagsExpense = [
     { name: 'Materiały', icon: <Package size={12} />, color: '#3b82f6' }, 
     { name: 'Paliwo', icon: <Fuel size={12} />, color: '#f59e0b' },      
@@ -99,252 +103,395 @@ const App = () => {
   const getCategoryIcon = (description) => {
     const allTags = [...quickTagsIncome, ...quickTagsExpense];
     const tag = allTags.find(t => t.name.toLowerCase() === description.toLowerCase());
-    if (tag) {
-      return React.cloneElement(tag.icon, { color: tag.color });
-    }
+    if (tag) return React.cloneElement(tag.icon, { color: tag.color });
     return <TagIcon size={12} className="text-slate-300" />;
   };
 
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    setAuthError(null);
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Błąd logowania Google:", error);
-      if (error.code === 'auth/unauthorized-domain') {
-        setAuthError("Domena nieuprawniona. Dodaj swój adres Vercel w Firebase Console -> Auth -> Settings -> Authorized domains.");
-      } else {
-        setAuthError("Błąd logowania. Spróbuj ponownie.");
-      }
-    }
-  };
-
-  const handleLogout = () => signOut(auth);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!user) return;
-
-    const qTrans = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
-    const unsubTrans = onSnapshot(qTrans, (snapshot) => {
+    const unsubTrans = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTransactions(data.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
-    }, (err) => console.error("Firestore Error:", err));
-
-    const qClients = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
-    const unsubClients = onSnapshot(qClients, (snapshot) => {
+    });
+    const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setClients(data.sort((a, b) => a.name.localeCompare(b.name)));
     });
-
     return () => { unsubTrans(); unsubClients(); };
   }, [user]);
 
-  const handleExport = () => {
-    const backupData = {
-      appId,
-      exportedAt: new Date().toISOString(),
-      clients: clients.map(({id, ...rest}) => rest),
-      transactions: transactions.map(({id, ...rest}) => rest)
-    };
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_finanse_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const loginWithGoogle = async () => {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { setAuthError("Błąd logowania."); }
   };
 
-  const handleImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !user) return;
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        setImportStatus("Importowanie...");
-        for (const client of data.clients) {
-          const exists = clients.find(c => c.name.toLowerCase() === client.name.toLowerCase());
-          if (!exists) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), { ...client, createdAt: serverTimestamp() });
-        }
-        for (const trans of data.transactions) {
-          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), { ...trans, timestamp: serverTimestamp() });
-        }
-        setImportStatus("Zakończono!");
-        setTimeout(() => setImportStatus(null), 3000);
-      } catch (err) {
-        setImportStatus("Błąd!");
-        setTimeout(() => setImportStatus(null), 3000);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleAddTransaction = async (e) => {
+  const handleAddOrEdit = async (e) => {
     e.preventDefault();
     if (!user || !formData.client || !formData.amount || !formData.description) return;
+    
+    const descLower = formData.description.toLowerCase();
+    const data = {
+      client: formData.client,
+      description: formData.description,
+      amount: parseFloat(formData.amount),
+      type: activeTab,
+      timestamp: editingTransaction ? editingTransaction.timestamp : serverTimestamp(),
+      userId: user.uid,
+      status: (activeTab === 'expense' && !formData.isCompanyFunds && !['inwestycja', 'wypłata'].includes(descLower)) ? 'pending' : 'settled',
+      person: (activeTab === 'income') ? 'Firma' : (formData.isCompanyFunds ? 'Firma' : formData.person)
+    };
+
     try {
-      const descLower = formData.description.toLowerCase();
-      const transData = {
-        client: formData.client,
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        type: activeTab,
-        timestamp: serverTimestamp(),
-        userId: user.uid,
-        status: (activeTab === 'expense' && !formData.isCompanyFunds && !['inwestycja', 'wypłata'].includes(descLower)) ? 'pending' : 'settled',
-        person: (activeTab === 'income') ? 'Firma' : (formData.isCompanyFunds ? 'Firma' : formData.person)
-      };
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), transData);
-      if (!clients.some(c => c.name.toLowerCase() === formData.client.toLowerCase())) {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), { name: formData.client, createdAt: serverTimestamp() });
+      if (editingTransaction) {
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', editingTransaction.id), data);
+        setEditingTransaction(null);
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), data);
+        if (!clients.some(c => c.name.toLowerCase() === formData.client.toLowerCase())) {
+          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), { name: formData.client, createdAt: serverTimestamp() });
+        }
       }
-      setFormData({ ...formData, description: '', amount: '', isCompanyFunds: true });
+      setFormData({ client: '', description: '', amount: '', person: 'Adam', isCompanyFunds: true });
       setIsAddingNewClient(false);
     } catch (err) { console.error(err); }
   };
 
-  const settleTransaction = async (id, newStatus) => {
-    try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', id), { status: newStatus }); }
-    catch (err) { console.error(err); }
+  const startEdit = (item) => {
+    setEditingTransaction(item);
+    setActiveTab(item.type);
+    setFormData({
+      client: item.client,
+      description: item.description,
+      amount: item.amount.toString(),
+      person: item.person === 'Firma' ? 'Adam' : item.person,
+      isCompanyFunds: item.person === 'Firma'
+    });
+    setView('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (coll, id) => {
-    try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', coll, id)); }
-    catch (err) { console.error(err); }
-  };
+  // Logika filtrowania
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const matchesSearch = t.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            t.description.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!matchesSearch) return false;
 
-  const selectTag = (tag) => {
-    setFormData(prev => ({ ...prev, description: tag }));
-  };
+      if (dateFilter === 'all') return true;
+      const date = t.timestamp?.toDate ? t.timestamp.toDate() : new Date();
+      const now = new Date();
+      if (dateFilter === 'today') return date.toDateString() === now.toDateString();
+      if (dateFilter === 'month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      if (dateFilter === 'year') return date.getFullYear() === now.getFullYear();
+      return true;
+    });
+  }, [transactions, searchTerm, dateFilter]);
 
   const stats = useMemo(() => {
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-    const operatingExpenses = transactions.filter(t => t.type === 'expense' && !['inwestycja', 'wypłata'].includes(t.description.toLowerCase())).reduce((acc, curr) => acc + curr.amount, 0);
     const settledCashOut = transactions.filter(t => t.type === 'expense' && t.status === 'settled' && t.description.toLowerCase() !== 'inwestycja').reduce((acc, curr) => acc + curr.amount, 0);
-    const personalPayouts = { Adam: transactions.filter(t => t.person === 'Adam' && t.description.toLowerCase() === 'wypłata').reduce((acc, curr) => acc + curr.amount, 0), Mateusz: transactions.filter(t => t.person === 'Mateusz' && t.description.toLowerCase() === 'wypłata').reduce((acc, curr) => acc + curr.amount, 0) };
-    const investments = { Adam: transactions.filter(t => t.person === 'Adam' && t.description.toLowerCase() === 'inwestycja').reduce((acc, curr) => acc + curr.amount, 0), Mateusz: transactions.filter(t => t.person === 'Mateusz' && t.description.toLowerCase() === 'inwestycja').reduce((acc, curr) => acc + curr.amount, 0) };
-    const pendingDebts = { Adam: transactions.filter(t => t.type === 'expense' && t.person === 'Adam' && t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0), Mateusz: transactions.filter(t => t.type === 'expense' && t.person === 'Mateusz' && t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0) };
+    const pendingDebts = { 
+      Adam: transactions.filter(t => t.person === 'Adam' && t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0),
+      Mateusz: transactions.filter(t => t.person === 'Mateusz' && t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0)
+    };
     const clientSummary = transactions.reduce((acc, t) => {
       if (!acc[t.client]) acc[t.client] = { income: 0, expense: 0 };
       if (t.type === 'income') acc[t.client].income += t.amount;
       else if (t.description.toLowerCase() !== 'inwestycja') acc[t.client].expense += t.amount;
       return acc;
     }, {});
-    return { availableBalance: totalIncome - settledCashOut, totalIncome, operatingExpenses, clientSummary, pendingDebts, investments, personalPayouts, totalInvestment: investments.Adam + investments.Mateusz, totalPayouts: personalPayouts.Adam + personalPayouts.Mateusz, historicalProfit: totalIncome - operatingExpenses };
+    const operatingExpenses = transactions.filter(t => t.type === 'expense' && !['inwestycja', 'wypłata'].includes(t.description.toLowerCase())).reduce((acc, curr) => acc + curr.amount, 0);
+    
+    return { 
+      availableBalance: totalIncome - settledCashOut, 
+      totalIncome, 
+      pendingDebts, 
+      clientSummary,
+      historicalProfit: totalIncome - operatingExpenses,
+      payouts: {
+        Adam: transactions.filter(t => t.person === 'Adam' && t.description.toLowerCase() === 'wypłata').reduce((acc, curr) => acc + curr.amount, 0),
+        Mateusz: transactions.filter(t => t.person === 'Mateusz' && t.description.toLowerCase() === 'wypłata').reduce((acc, curr) => acc + curr.amount, 0)
+      }
+    };
   }, [transactions]);
 
   if (!user && !loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6 text-left">
-        <div className="max-w-sm w-full bg-white rounded-3xl shadow-xl p-8 text-center space-y-6">
-          <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white mx-auto shadow-lg"><Building2 size={32} /></div>
-          <div><h2 className="text-2xl font-black text-slate-800">System Finansowy</h2><p className="text-slate-500 text-sm mt-2">Zaloguj się kontem Google.</p></div>
-          {authError && <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2 text-left"><AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} /><p className="text-[10px] text-red-600 font-bold flex-1">{authError}</p><button onClick={() => setAuthError(null)}><X size={14} className="text-red-400" /></button></div>}
-          <button onClick={loginWithGoogle} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G" />Zaloguj przez Google</button>
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-sm w-full bg-white rounded-3xl shadow-2xl p-10 text-center space-y-8 border border-slate-100">
+          <div className="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center text-white mx-auto shadow-indigo-200 shadow-2xl rotate-3"><Building2 size={40} /></div>
+          <div><h2 className="text-3xl font-black text-slate-800 tracking-tight">Finanse Firmowe</h2><p className="text-slate-500 mt-2 font-medium">Bezpieczny system rozliczeń.</p></div>
+          <button onClick={loginWithGoogle} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 font-bold text-slate-700 hover:bg-slate-50 transition-all hover:scale-[1.02] active:scale-95 shadow-sm"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="G" />Zaloguj przez Google</button>
         </div>
       </div>
     );
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse uppercase text-left tracking-widest">Wczytywanie...</div>;
+  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse text-lg tracking-widest"><Building2 size={48} className="mb-4" /> WCZYTYWANIE...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-6 font-sans antialiased text-left text-left">
-      <header className="bg-white border-b sticky top-0 z-40 shadow-sm text-left">
-        <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-2 text-left">
-          <div className="flex items-center gap-2"><div className="bg-indigo-600 p-1 rounded-lg text-white"><Building2 size={16} /></div><h1 className="text-sm font-black tracking-tight uppercase">Finanse</h1></div>
-          <div className="flex items-center gap-3">
-            <nav className="flex bg-slate-100 p-0.5 rounded-lg">
-              <button onClick={() => setView('dashboard')} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${view === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Panel</button>
-              <button onClick={() => setView('report')} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${view === 'report' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Raport</button>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12 font-sans antialiased text-left">
+      <header className="bg-white border-b sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/80">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
+            <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100"><Building2 size={20} /></div>
+            <h1 className="text-xl font-black tracking-tighter uppercase text-slate-800">System <span className="text-indigo-600">Rozliczeń</span></h1>
+          </div>
+          <div className="flex items-center gap-6">
+            <nav className="hidden md:flex bg-slate-100 p-1 rounded-xl">
+              <button onClick={() => setView('dashboard')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase transition-all ${view === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Panel Główny</button>
+              <button onClick={() => setView('report')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase transition-all ${view === 'report' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Analiza i Raport</button>
             </nav>
-            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><LogOut size={16} /></button>
+            <button onClick={() => signOut(auth)} className="p-2.5 text-slate-400 hover:text-red-500 bg-slate-50 rounded-xl transition-colors"><LogOut size={20} /></button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 mt-3 text-left">
+      <main className="max-w-7xl mx-auto px-6 mt-8">
         {view === 'dashboard' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-left">
-            <div className="lg:col-span-5 space-y-3 text-left">
-              <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden text-left">
-                <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest text-left">Saldo w kasie</p>
-                <h2 className="text-2xl font-black mt-0.5 mb-4 text-left">{stats.availableBalance.toFixed(2)} <span className="text-[9px] font-medium text-slate-500">PLN</span></h2>
-                <div className="grid grid-cols-2 gap-2 text-center text-left">
-                  <div className="bg-white/5 rounded-lg p-2 border border-white/5"><p className="text-[8px] uppercase font-bold text-orange-400 mb-0.5">Mateusz (do zwrotu)</p><p className="text-sm font-bold">{stats.pendingDebts.Mateusz.toFixed(0)}</p></div>
-                  <div className="bg-white/5 rounded-lg p-2 border border-white/5"><p className="text-[8px] uppercase font-bold text-orange-400 mb-0.5">Adam (do zwrotu)</p><p className="text-sm font-bold">{stats.pendingDebts.Adam.toFixed(0)}</p></div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Lewy Panel - Statystyki i Formularz */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800 group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-600/30 transition-all"></div>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Dostępny kapitał</p>
+                <h2 className="text-4xl font-black mb-6 tracking-tight tabular-nums">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1">PLN</span></h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Mateusz (pend.)</p>
+                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Mateusz.toFixed(0)}</p>
+                  </div>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Adam (pend.)</p>
+                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Adam.toFixed(0)}</p>
+                  </div>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-left">
-                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 text-left"><Users size={12} className="text-indigo-500" /> Saldo Projektów</h3>
-                <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
-                  {Object.entries(stats.clientSummary).map(([name, data]) => (
-                    <div key={name} className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 transition-all hover:border-indigo-200 text-left">
-                      <p className="text-[11px] font-bold text-slate-800 truncate text-left">{name}</p>
-                      <span className={`font-black text-[11px] ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-500'}`}>{(data.income - data.expense).toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
 
-            <div className="lg:col-span-7 space-y-3 text-left">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left">
-                <div className="flex p-0.5 bg-slate-50 border-b text-left">
-                  <button onClick={() => setActiveTab('income')} className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
-                  <button onClick={() => setActiveTab('expense')} className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt / Wypłata</button>
+              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden border-b-4 border-b-indigo-600">
+                <div className="flex p-1 bg-slate-50 border-b">
+                  <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Nowa Wpłata</button>
+                  <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Nowy Koszt</button>
                 </div>
-                <form onSubmit={handleAddTransaction} className="p-4 space-y-3 text-left">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left text-left">
-                    <div className="space-y-1 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Klient</label><div className="flex gap-1.5 text-left">{isAddingNewClient ? (<input autoFocus className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-indigo-100 outline-none font-medium text-left" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />) : (<select className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none bg-white font-medium text-left" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required><option value="">Wybierz...</option>{clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select>)}<button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-1.5 rounded-lg bg-slate-50 text-indigo-600 border border-slate-200"><Plus size={14} /></button></div></div>
-                    <div className="space-y-1 text-left text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Źródło</label>{activeTab === 'income' ? (<div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700 font-bold text-[9px] uppercase"><Building2 size={13} /> Konto Firmowe</div>) : (<div className="flex flex-col gap-1.5 text-left"><div className="flex p-0.5 bg-slate-100 rounded-lg gap-0.5"><button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button><button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button></div>{!formData.isCompanyFunds && (<div className="flex gap-1 p-0.5 bg-orange-50 rounded-lg border border-orange-100">{staff.map(name => (<button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-md text-[8px] font-bold ${formData.person === name ? 'bg-white text-orange-600 shadow-xs' : 'text-orange-300'}`}>{name}</button>))}</div>)}</div>)}</div>
-                    <div className="space-y-1 md:col-span-2 text-left"><label className="text-[9px] font-black text-slate-400 uppercase">Kategoria i Opis</label><div className="flex flex-wrap gap-1 mb-2 text-left">{(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (<button key={tag.name} type="button" onClick={() => selectTag(tag.name)} className={`px-2 py-1 rounded-lg text-[9px] font-bold border flex items-center gap-1.5 ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>{tag.icon} {tag.name}</button>))}</div><input className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 outline-none text-left" placeholder="Co to za operacja?" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required /></div>
-                    <div className="space-y-1 md:col-span-2 text-left"><label className="text-[9px] font-black text-slate-400 uppercase text-left">Kwota</label><div className="flex gap-2 text-left text-left"><div className="relative flex-1 text-left"><input type="number" step="0.01" className="w-full px-3 py-1.5 rounded-lg border border-slate-200 outline-none font-black text-lg bg-slate-50/50 text-left" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required /><span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-300 text-xs">zł</span></div><button type="submit" className={`px-6 rounded-lg text-white font-black text-[10px] uppercase shadow-md ${activeTab === 'income' ? 'bg-green-600' : 'bg-red-600'}`}>Zapisz</button></div></div>
+                <form onSubmit={handleAddOrEdit} className="p-8 space-y-6">
+                  {editingTransaction && (
+                    <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
+                      <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Tryb Edycji</span>
+                      <button onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={14}/></button>
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Klient / Projekt</label>
+                        <div className="flex gap-2">
+                          {isAddingNewClient ? (
+                            <input autoFocus className="flex-1 px-4 py-3 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
+                          ) : (
+                            <select className="flex-1 px-4 py-3 text-sm rounded-xl border border-slate-200 outline-none bg-white font-bold text-slate-700 focus:border-indigo-500" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
+                              <option value="">Wybierz...</option>
+                              {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                            </select>
+                          )}
+                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3 rounded-xl bg-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"><Plus size={18} /></button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kto płacił?</label>
+                        {activeTab === 'income' ? (
+                          <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-bold text-xs"><Building2 size={16} /> Przelew na Firmę</div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex p-1 bg-slate-100 rounded-xl">
+                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Firmowe</button>
+                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500'}`}>Prywatne</button>
+                            </div>
+                            {!formData.isCompanyFunds && (
+                              <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in zoom-in-95">
+                                {staff.map(name => (
+                                  <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-lg text-[10px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kategoria i Opis</label>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (
+                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
+                        ))}
+                      </div>
+                      <input className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium" placeholder="Szczegóły transakcji..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Wartość</label>
+                      <div className="flex gap-3">
+                        <div className="relative flex-1">
+                          <input type="number" step="0.01" className="w-full pl-4 pr-12 py-4 rounded-2xl border-2 border-slate-100 font-black text-2xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all tracking-tight" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-300 text-sm">PLN</span>
+                        </div>
+                        <button type="submit" className={`px-8 rounded-2xl text-white font-black text-xs uppercase shadow-xl transition-all hover:scale-[1.03] active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
+                          {editingTransaction ? 'Zapisz' : 'Dodaj'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </form>
               </div>
+            </div>
 
-              <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1 text-left">
-                {transactions.slice(0, 25).map((item) => (
-                  <div key={item.id} className="bg-white p-2.5 rounded-xl border border-slate-100 flex items-center justify-between group shadow-xs text-left">
-                    <div className="flex items-center gap-3 min-w-0 text-left">
-                      <div className={`p-2 rounded-lg shrink-0 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400')}`}><TrendingUp size={15} /></div>
-                      <div className="min-w-0 text-left"><div className="flex items-center gap-1.5 font-bold text-[11px] text-left"><span className="text-slate-800 truncate text-left">{item.client}</span><span className={`text-[7px] px-1 py-0.5 rounded-md uppercase shrink-0 ${item.person === 'Firma' ? 'bg-indigo-50 text-indigo-500' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span></div><p className="text-[9px] text-slate-400 flex items-center gap-1 truncate uppercase text-left">{getCategoryIcon(item.description)} {item.description}</p></div>
+            {/* Prawy Panel - Filtrowanie i Lista */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-2xl border-none outline-none text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all" placeholder="Szukaj klienta lub opisu..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0">
+                  <button onClick={() => setDateFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Wszystko</button>
+                  <button onClick={() => setDateFilter('today')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'today' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Dziś</button>
+                  <button onClick={() => setDateFilter('month')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Miesiąc</button>
+                </div>
+              </div>
+
+              <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                {filteredTransactions.length > 0 ? filteredTransactions.map((item) => (
+                  <div key={item.id} className="bg-white p-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm hover:shadow-md">
+                    <div className="flex items-center gap-5 min-w-0">
+                      <div className={`p-4 rounded-2xl shrink-0 transition-transform group-hover:rotate-6 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
+                        {item.type === 'income' ? <TrendingUp size={22} /> : (item.status === 'pending' ? <RotateCcw size={22} /> : <CheckCircle2 size={22} />)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-black text-sm text-slate-800 truncate">{item.client}</span>
+                          <span className={`text-[8px] px-2 py-0.5 rounded-lg font-black uppercase ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="text-xs text-slate-400 flex items-center gap-1.5 truncate uppercase font-bold">{getCategoryIcon(item.description)} {item.description}</p>
+                          <span className="text-[10px] text-slate-300 font-medium flex items-center gap-1"><Calendar size={10}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0 text-left"><div className="text-right text-left text-left"><div className={`font-black text-xs ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-500')}`}>{item.amount.toFixed(2)}</div>{item.status === 'pending' ? (<button onClick={() => settleTransaction(item.id, 'settled')} className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded uppercase shadow-xs">Rozlicz</button>) : (item.person !== 'Firma' && item.type === 'expense' && !['wypłata', 'inwestycja'].includes(item.description.toLowerCase()) && (<button onClick={() => settleTransaction(item.id, 'pending')} className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[7px] font-bold rounded uppercase flex items-center gap-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><RotateCcw size={8} /> Cofnij</button>))}</div><button onClick={() => handleDelete('transactions', item.id)} className="p-1 text-slate-100 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-colors"><Trash2 size={13} /></button></div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <div className={`font-black text-lg tracking-tight tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
+                          {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="flex gap-2 justify-end mt-1">
+                          {item.status === 'pending' && (
+                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-3 py-1 bg-indigo-600 text-white text-[9px] font-black rounded-lg uppercase shadow-sm hover:bg-indigo-700 transition-colors">Rozlicz</button>
+                          )}
+                          <button onClick={() => startEdit(item)} className="p-2 text-slate-300 hover:text-indigo-600 bg-slate-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"><Edit2 size={14} /></button>
+                          <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id))} className="p-2 text-slate-300 hover:text-red-500 bg-slate-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200">
+                    <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300"><Search size={32}/></div>
+                    <p className="font-bold text-slate-400 uppercase text-xs tracking-widest">Brak wyników dla tych filtrów</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         ) : (
           /* WIDOK RAPORTU */
-          <div className="space-y-4 animate-in fade-in duration-300 text-left text-left">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-left text-left">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 text-left"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-left">Całkowity Przychód</p><p className="text-xl font-black text-green-600">+{stats.totalIncome.toFixed(0)}</p></div>
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 text-left"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-left">Koszty Operacyjne</p><p className="text-xl font-black text-red-500">-{stats.operatingExpenses.toFixed(0)}</p></div>
-              <div className="bg-indigo-600 p-4 rounded-2xl text-white border border-indigo-500 md:col-span-2 shadow-md text-left text-left text-left"><p className="text-[8px] font-bold text-indigo-200 uppercase mb-1 tracking-widest text-left">Zysk Netto Wypracowany</p><p className="text-xl font-black">{stats.historicalProfit.toFixed(0)} PLN</p></div>
+          <div className="space-y-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 text-green-100 transition-colors group-hover:text-green-200"><TrendingUp size={48}/></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Przychody</p>
+                <p className="text-3xl font-black text-green-600 tabular-nums">+{stats.totalIncome.toLocaleString()}</p>
+              </div>
+              <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 text-red-100 transition-colors group-hover:text-red-200"><RotateCcw size={48}/></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Wydatki</p>
+                <p className="text-3xl font-black text-red-500 tabular-nums">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()}</p>
+              </div>
+              <div className="bg-indigo-600 p-8 rounded-[2rem] text-white shadow-xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center">
+                <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-2">Zysk Netto Firmy</p>
+                <p className="text-4xl font-black tabular-nums">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-left">
-              <div className="bg-emerald-600 rounded-2xl p-4 text-white text-left text-left"><h3 className="text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-2"><HandCoins size={14} /> Wypłaty Własne</h3><div className="grid grid-cols-2 gap-3 text-center text-left"><div className="bg-white/10 rounded-xl p-2 border border-white/10 text-center"><p className="text-[8px] font-bold text-emerald-100 uppercase">Adam:</p><p className="text-lg font-black">{stats.personalPayouts.Adam.toFixed(0)}</p></div><div className="bg-white/10 rounded-xl p-2 border border-white/10 text-center"><p className="text-[8px] font-bold text-emerald-100 uppercase">Mateusz:</p><p className="text-lg font-black">{stats.personalPayouts.Mateusz.toFixed(0)}</p></div></div></div>
-              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col justify-center items-center text-left text-left text-left"><h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5 mb-2 text-left"><ShieldCheck size={14} className="text-indigo-600" /> Backup</h3><div className="flex gap-2 text-left text-left"><button onClick={handleExport} className="p-2 bg-slate-800 text-white rounded-lg shadow-sm hover:bg-slate-700 transition-all text-left"><Download size={14} /></button><button onClick={() => fileInputRef.current.click()} className="p-2 bg-white border border-slate-200 text-slate-800 rounded-lg hover:border-indigo-600 shadow-xs transition-all text-left"><Upload size={14} /></button><input type="file" ref={fileInputRef} className="hidden text-left" accept=".json" onChange={handleImport} /></div>{importStatus && <p className="text-[8px] font-black uppercase text-center mt-2 text-indigo-600 text-left">{importStatus}</p>}</div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-emerald-600 rounded-[2rem] p-8 text-white shadow-xl shadow-emerald-100">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-3"><HandCoins size={20} /> Wypłaty Własne</h3>
+                <div className="grid grid-cols-2 gap-6 text-center">
+                  <div className="bg-white/10 rounded-2xl p-6 border border-white/10 backdrop-blur-md">
+                    <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Adam</p>
+                    <p className="text-3xl font-black tabular-nums">{stats.payouts.Adam.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-6 border border-white/10 backdrop-blur-md">
+                    <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Mateusz</p>
+                    <p className="text-3xl font-black tabular-nums">{stats.payouts.Mateusz.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2rem] p-8 flex flex-col justify-center items-center text-center">
+                <ShieldCheck size={48} className="text-indigo-600 mb-4" />
+                <h3 className="text-lg font-black text-slate-800 mb-2">Zarządzanie Danymi</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-6 tracking-wider">Bezpieczna Kopia Zapasowa</p>
+                <div className="flex gap-4">
+                  <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-xl font-black text-xs uppercase hover:bg-slate-700 transition-all"><Download size={16}/> Eksport JSON</button>
+                  <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-800 rounded-xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm"><Upload size={16}/> Import danych</button>
+                  <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
+                </div>
+                {importStatus && <p className="mt-4 text-xs font-black text-indigo-600 animate-bounce">{importStatus}</p>}
+              </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left text-left text-left text-left">
-              <div className="p-3 border-b bg-slate-50/50 flex items-center justify-between text-left"><h3 className="font-black text-[10px] uppercase tracking-widest flex items-center gap-2 text-left"><PieChart size={14} className="text-indigo-600" /> Podsumowanie Projektów</h3></div>
-              <div className="overflow-x-auto text-left text-left text-left text-left"><table className="w-full text-left text-[11px] min-w-[400px] text-left text-left text-left text-left text-left"><thead className="bg-slate-50 text-[8px] uppercase font-bold text-slate-400 border-b text-left text-left"><tr><th className="px-4 py-2 text-left">Projekt</th><th className="px-4 py-2 text-left">Przychody</th><th className="px-4 py-2 text-left">Koszty</th><th className="px-4 py-2 text-right text-left">Saldo</th></tr></thead><tbody className="divide-y divide-slate-100 text-left text-left text-left text-left">{Object.entries(stats.clientSummary).map(([name, data]) => (<tr key={name} className="hover:bg-slate-50/50 transition-colors text-left text-left text-left text-left"><td className="px-4 py-2 font-bold text-slate-800 truncate max-w-[120px] text-left">{name}</td><td className="px-4 py-2 text-green-600 font-bold text-left">+{data.income.toFixed(0)}</td><td className="px-4 py-2 text-red-400 text-left">-{data.expense.toFixed(0)}</td><td className={`px-4 py-2 text-right font-black text-left ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>{(data.income - data.expense).toFixed(0)}</td></tr>))}</tbody></table></div></div>
+
+            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b bg-slate-50/50 flex items-center justify-between">
+                <h3 className="font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3"><PieChart size={18} className="text-indigo-600" /> Analiza Rentowności Projektów</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-400 border-b">
+                    <tr>
+                      <th className="px-8 py-4">Nazwa Projektu</th>
+                      <th className="px-8 py-4 text-center">Całkowity Przychód</th>
+                      <th className="px-8 py-4 text-center">Koszty Operacyjne</th>
+                      <th className="px-8 py-4 text-right">Zysk z Projektu</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {Object.entries(stats.clientSummary).map(([name, data]) => (
+                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5 font-black text-slate-800">{name}</td>
+                        <td className="px-8 py-5 text-center text-green-600 font-bold">+{data.income.toLocaleString()}</td>
+                        <td className="px-8 py-5 text-center text-red-400">-{data.expense.toLocaleString()}</td>
+                        <td className={`px-8 py-5 text-right font-black tabular-nums ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
+                          {(data.income - data.expense).toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </main>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+      `}</style>
     </div>
   );
 };
