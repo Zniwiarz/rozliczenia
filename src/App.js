@@ -43,8 +43,15 @@ import {
   Search,
   Calendar,
   Edit2,
-  Filter
+  CheckCircle2
 } from 'lucide-react';
+
+// --- KONFIGURACJA DOSTĘPU (BIAŁA LISTA) ---
+// Wpisz tutaj adresy e-mail osób, które mogą korzystać z systemu
+const ALLOWED_EMAILS = [
+  "mateukokaczmarczyk@gmail.com", 
+  "email-wspolnika@gmail.com"
+];
 
 // --- TWOJA KONFIGURACJA FIREBASE ---
 const firebaseConfig = {
@@ -73,11 +80,8 @@ const App = () => {
   const [authError, setAuthError] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Filtrowanie
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('all'); // all, today, month, year
-
-  // Edycja
+  const [dateFilter, setDateFilter] = useState('all'); 
   const [editingTransaction, setEditingTransaction] = useState(null);
   
   const [formData, setFormData] = useState({
@@ -108,7 +112,16 @@ const App = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
+    const unsubscribe = onAuthStateChanged(auth, (u) => { 
+      if (u && !ALLOWED_EMAILS.includes(u.email)) {
+        signOut(auth);
+        setAuthError(`Adres ${u.email} nie ma uprawnień do tego systemu.`);
+        setUser(null);
+      } else {
+        setUser(u);
+      }
+      setLoading(false); 
+    });
     return () => unsubscribe();
   }, []);
 
@@ -126,7 +139,16 @@ const App = () => {
   }, [user]);
 
   const loginWithGoogle = async () => {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (err) { setAuthError("Błąd logowania."); }
+    setAuthError(null);
+    try { 
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      if (!ALLOWED_EMAILS.includes(result.user.email)) {
+        await signOut(auth);
+        setAuthError(`Adres ${result.user.email} nie znajduje się na liście uprawnionych.`);
+      }
+    } catch (err) { 
+      setAuthError("Wystąpił błąd podczas logowania."); 
+    }
   };
 
   const handleAddOrEdit = async (e) => {
@@ -174,14 +196,11 @@ const App = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Logika filtrowania
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
       const matchesSearch = t.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             t.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
       if (!matchesSearch) return false;
-
       if (dateFilter === 'all') return true;
       const date = t.timestamp?.toDate ? t.timestamp.toDate() : new Date();
       const now = new Date();
@@ -223,16 +242,28 @@ const App = () => {
   if (!user && !loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-sm w-full bg-white rounded-3xl shadow-2xl p-10 text-center space-y-8 border border-slate-100">
-          <div className="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center text-white mx-auto shadow-indigo-200 shadow-2xl rotate-3"><Building2 size={40} /></div>
-          <div><h2 className="text-3xl font-black text-slate-800 tracking-tight">Finanse Firmowe</h2><p className="text-slate-500 mt-2 font-medium">Bezpieczny system rozliczeń.</p></div>
-          <button onClick={loginWithGoogle} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 font-bold text-slate-700 hover:bg-slate-50 transition-all hover:scale-[1.02] active:scale-95 shadow-sm"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="G" />Zaloguj przez Google</button>
+        <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 text-center space-y-8 border border-slate-100">
+          <div className="bg-indigo-600 w-24 h-24 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-indigo-200 shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-500"><Building2 size={48} /></div>
+          <div>
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight">System Finansowy</h2>
+            <p className="text-slate-500 mt-2 font-bold uppercase text-[10px] tracking-widest italic text-indigo-600">Dostęp ograniczony (Whitelist)</p>
+          </div>
+          {authError && (
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3 text-left animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+              <p className="text-xs text-red-600 font-bold leading-relaxed">{authError}</p>
+            </div>
+          )}
+          <button onClick={loginWithGoogle} className="w-full py-5 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-4 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-slate-200">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="G" />
+            Zaloguj przez Google
+          </button>
         </div>
       </div>
     );
   }
 
-  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse text-lg tracking-widest"><Building2 size={48} className="mb-4" /> WCZYTYWANIE...</div>;
+  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse text-lg tracking-widest"><Building2 size={48} className="mb-4" /> Weryfikacja...</div>;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-12 font-sans antialiased text-left">
@@ -245,9 +276,15 @@ const App = () => {
           <div className="flex items-center gap-6">
             <nav className="hidden md:flex bg-slate-100 p-1 rounded-xl">
               <button onClick={() => setView('dashboard')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase transition-all ${view === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Panel Główny</button>
-              <button onClick={() => setView('report')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase transition-all ${view === 'report' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Analiza i Raport</button>
+              <button onClick={() => setView('report')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase transition-all ${view === 'report' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Raport i Kopia</button>
             </nav>
-            <button onClick={() => signOut(auth)} className="p-2.5 text-slate-400 hover:text-red-500 bg-slate-50 rounded-xl transition-colors"><LogOut size={20} /></button>
+            <div className="flex items-center gap-3 pl-6 border-l border-slate-200">
+               <div className="hidden sm:block text-right">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Zalogowany:</p>
+                 <p className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{user.email}</p>
+               </div>
+               <button onClick={() => signOut(auth)} className="p-2.5 text-slate-400 hover:text-red-500 bg-slate-50 rounded-xl transition-colors"><LogOut size={20} /></button>
+            </div>
           </div>
         </div>
       </header>
@@ -255,66 +292,66 @@ const App = () => {
       <main className="max-w-7xl mx-auto px-6 mt-8">
         {view === 'dashboard' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Lewy Panel - Statystyki i Formularz */}
+            {/* Formularz i Główne Saldo */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800 group">
+              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800 group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-600/30 transition-all"></div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Dostępny kapitał</p>
-                <h2 className="text-4xl font-black mb-6 tracking-tight tabular-nums">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1">PLN</span></h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Mateusz (pend.)</p>
-                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Mateusz.toFixed(0)}</p>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-left">Dostępny kapitał</p>
+                <h2 className="text-4xl font-black mb-6 tracking-tight tabular-nums text-left">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1 text-left">PLN</span></h2>
+                <div className="grid grid-cols-2 gap-4 text-left">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-left">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1 text-left">Mateusz (do zwrotu)</p>
+                    <p className="text-lg font-black tabular-nums text-left">{stats.pendingDebts.Mateusz.toFixed(0)} zł</p>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Adam (pend.)</p>
-                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Adam.toFixed(0)}</p>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-left">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1 text-left">Adam (do zwrotu)</p>
+                    <p className="text-lg font-black tabular-nums text-left">{stats.pendingDebts.Adam.toFixed(0)} zł</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden border-b-4 border-b-indigo-600">
-                <div className="flex p-1 bg-slate-50 border-b">
-                  <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Nowa Wpłata</button>
-                  <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Nowy Koszt</button>
+              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden border-b-8 border-b-indigo-600 text-left">
+                <div className="flex p-1.5 bg-slate-50 border-b">
+                  <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-4 rounded-3xl text-xs font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
+                  <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-4 rounded-3xl text-xs font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt</button>
                 </div>
-                <form onSubmit={handleAddOrEdit} className="p-8 space-y-6">
+                <form onSubmit={handleAddOrEdit} className="p-8 space-y-6 text-left">
                   {editingTransaction && (
-                    <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
-                      <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Tryb Edycji</span>
-                      <button onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={14}/></button>
+                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center justify-between text-left">
+                      <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Tryb Edycji Historii</span>
+                      <button onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={16}/></button>
                     </div>
                   )}
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
+                  <div className="space-y-5 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                      <div className="space-y-1.5 text-left">
                         <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Klient / Projekt</label>
                         <div className="flex gap-2">
                           {isAddingNewClient ? (
-                            <input autoFocus className="flex-1 px-4 py-3 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
+                            <input autoFocus className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
                           ) : (
-                            <select className="flex-1 px-4 py-3 text-sm rounded-xl border border-slate-200 outline-none bg-white font-bold text-slate-700 focus:border-indigo-500" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
-                              <option value="">Wybierz...</option>
+                            <select className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700 focus:border-indigo-500" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
+                              <option value="">Wybierz klienta...</option>
                               {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
                           )}
-                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3 rounded-xl bg-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"><Plus size={18} /></button>
+                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3.5 rounded-xl bg-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><Plus size={18} /></button>
                         </div>
                       </div>
                       <div className="space-y-1.5 text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kto płacił?</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
                         {activeTab === 'income' ? (
-                          <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-bold text-xs"><Building2 size={16} /> Przelew na Firmę</div>
+                          <div className="flex items-center gap-3 px-4 py-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-black text-xs"><Building2 size={18} /> Konto Firmowe</div>
                         ) : (
                           <div className="flex flex-col gap-2">
                             <div className="flex p-1 bg-slate-100 rounded-xl">
-                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Firmowe</button>
-                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500'}`}>Prywatne</button>
+                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Firmowe</button>
+                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500'}`}>Prywatne</button>
                             </div>
                             {!formData.isCompanyFunds && (
                               <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in zoom-in-95">
                                 {staff.map(name => (
-                                  <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-lg text-[10px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
+                                  <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
                                 ))}
                               </div>
                             )}
@@ -323,25 +360,25 @@ const App = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kategoria i Opis</label>
-                      <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="space-y-1.5 text-left text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Szczegóły transakcji</label>
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (
-                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
+                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-4 py-2 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
                         ))}
                       </div>
-                      <input className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium" placeholder="Szczegóły transakcji..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
+                      <input className="w-full px-4 py-4 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold" placeholder="Opisz operację..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Wartość</label>
-                      <div className="flex gap-3">
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kwota operacji</label>
+                      <div className="flex gap-4">
                         <div className="relative flex-1">
-                          <input type="number" step="0.01" className="w-full pl-4 pr-12 py-4 rounded-2xl border-2 border-slate-100 font-black text-2xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all tracking-tight" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-300 text-sm">PLN</span>
+                          <input type="number" step="0.01" className="w-full pl-5 pr-14 py-5 rounded-[1.5rem] border-4 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 focus:bg-white transition-all tracking-tighter" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
+                          <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300 text-lg">zł</span>
                         </div>
-                        <button type="submit" className={`px-8 rounded-2xl text-white font-black text-xs uppercase shadow-xl transition-all hover:scale-[1.03] active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
-                          {editingTransaction ? 'Zapisz' : 'Dodaj'}
+                        <button type="submit" className={`px-10 rounded-[1.5rem] text-white font-black text-sm uppercase shadow-2xl transition-all hover:scale-[1.03] active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
+                          {editingTransaction ? 'Zaktualizuj' : 'Zapisz'}
                         </button>
                       </div>
                     </div>
@@ -350,57 +387,56 @@ const App = () => {
               </div>
             </div>
 
-            {/* Prawy Panel - Filtrowanie i Lista */}
-            <div className="lg:col-span-7 space-y-4">
-              <div className="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-2xl border-none outline-none text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all" placeholder="Szukaj klienta lub opisu..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            {/* Historia i Filtry */}
+            <div className="lg:col-span-7 space-y-4 text-left">
+              <div className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center text-left">
+                <div className="relative flex-1 w-full text-left">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all text-left" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
-                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0">
-                  <button onClick={() => setDateFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Wszystko</button>
-                  <button onClick={() => setDateFilter('today')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'today' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Dziś</button>
-                  <button onClick={() => setDateFilter('month')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Miesiąc</button>
+                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0 text-left">
+                  <button onClick={() => setDateFilter('all')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Wszystko</button>
+                  <button onClick={() => setDateFilter('month')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Ten Miesiąc</button>
                 </div>
               </div>
 
-              <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4 max-h-[750px] overflow-y-auto pr-3 custom-scrollbar text-left">
                 {filteredTransactions.length > 0 ? filteredTransactions.map((item) => (
-                  <div key={item.id} className="bg-white p-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm hover:shadow-md">
-                    <div className="flex items-center gap-5 min-w-0">
-                      <div className={`p-4 rounded-2xl shrink-0 transition-transform group-hover:rotate-6 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
-                        {item.type === 'income' ? <TrendingUp size={22} /> : (item.status === 'pending' ? <RotateCcw size={22} /> : <CheckCircle2 size={22} />)}
+                  <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm hover:shadow-xl text-left">
+                    <div className="flex items-center gap-6 min-w-0 text-left text-left">
+                      <div className={`p-5 rounded-2xl shrink-0 transition-all group-hover:scale-110 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
+                        {item.type === 'income' ? <TrendingUp size={24} /> : (item.status === 'pending' ? <RotateCcw size={24} /> : <CheckCircle2 size={24} />)}
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-black text-sm text-slate-800 truncate">{item.client}</span>
-                          <span className={`text-[8px] px-2 py-0.5 rounded-lg font-black uppercase ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
+                      <div className="min-w-0 text-left">
+                        <div className="flex items-center gap-3 mb-1 text-left">
+                          <span className="font-black text-base text-slate-800 truncate text-left">{item.client}</span>
+                          <span className={`text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tight ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <p className="text-xs text-slate-400 flex items-center gap-1.5 truncate uppercase font-bold">{getCategoryIcon(item.description)} {item.description}</p>
-                          <span className="text-[10px] text-slate-300 font-medium flex items-center gap-1"><Calendar size={10}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
+                        <div className="flex items-center gap-4 text-left">
+                          <p className="text-xs text-slate-400 flex items-center gap-2 truncate uppercase font-black text-left">{getCategoryIcon(item.description)} {item.description}</p>
+                          <span className="text-[11px] text-slate-300 font-bold flex items-center gap-1.5"><Calendar size={12}/> {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleDateString('pl-PL') : '...'}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <div className="text-right">
-                        <div className={`font-black text-lg tracking-tight tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
+                    <div className="flex items-center gap-5 shrink-0 text-left">
+                      <div className="text-right text-left">
+                        <div className={`font-black text-xl tracking-tighter tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
                           {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
                         </div>
-                        <div className="flex gap-2 justify-end mt-1">
+                        <div className="flex gap-3 justify-end mt-2 text-left">
                           {item.status === 'pending' && (
-                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-3 py-1 bg-indigo-600 text-white text-[9px] font-black rounded-lg uppercase shadow-sm hover:bg-indigo-700 transition-colors">Rozlicz</button>
+                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-xl uppercase shadow-md hover:bg-indigo-700 transition-colors">Rozlicz</button>
                           )}
-                          <button onClick={() => startEdit(item)} className="p-2 text-slate-300 hover:text-indigo-600 bg-slate-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"><Edit2 size={14} /></button>
-                          <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id))} className="p-2 text-slate-300 hover:text-red-500 bg-slate-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                          <button onClick={() => startEdit(item)} className="p-2.5 text-slate-300 hover:text-indigo-600 bg-slate-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-indigo-100"><Edit2 size={16} /></button>
+                          <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id))} className="p-2.5 text-slate-300 hover:text-red-500 bg-slate-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-red-100"><Trash2 size={16} /></button>
                         </div>
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200">
-                    <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300"><Search size={32}/></div>
-                    <p className="font-bold text-slate-400 uppercase text-xs tracking-widest">Brak wyników dla tych filtrów</p>
+                  <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300"><Search size={40}/></div>
+                    <p className="font-black text-slate-400 uppercase text-xs tracking-[0.3em]">Brak wpisów w historii</p>
                   </div>
                 )}
               </div>
@@ -408,74 +444,74 @@ const App = () => {
           </div>
         ) : (
           /* WIDOK RAPORTU */
-          <div className="space-y-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 text-green-100 transition-colors group-hover:text-green-200"><TrendingUp size={48}/></div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Przychody</p>
-                <p className="text-3xl font-black text-green-600 tabular-nums">+{stats.totalIncome.toLocaleString()}</p>
+          <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-6 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left">
+                <div className="absolute top-0 right-0 p-6 text-green-50 transition-colors group-hover:text-green-100"><TrendingUp size={64}/></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Przychody Firmy</p>
+                <p className="text-4xl font-black text-green-600 tabular-nums text-left">+{stats.totalIncome.toLocaleString()} zł</p>
               </div>
-              <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 text-red-100 transition-colors group-hover:text-red-200"><RotateCcw size={48}/></div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Wydatki</p>
-                <p className="text-3xl font-black text-red-500 tabular-nums">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()}</p>
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left">
+                <div className="absolute top-0 right-0 p-6 text-red-50 transition-colors group-hover:text-red-100"><RotateCcw size={64}/></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Łączne Koszty</p>
+                <p className="text-4xl font-black text-red-500 tabular-nums text-left">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
               </div>
-              <div className="bg-indigo-600 p-8 rounded-[2rem] text-white shadow-xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center">
-                <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-2">Zysk Netto Firmy</p>
-                <p className="text-4xl font-black tabular-nums">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
+              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center text-left">
+                <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-3 text-left">Zysk Netto Wypracowany</p>
+                <p className="text-5xl font-black tabular-nums text-left">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-emerald-600 rounded-[2rem] p-8 text-white shadow-xl shadow-emerald-100">
-                <h3 className="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-3"><HandCoins size={20} /> Wypłaty Własne</h3>
-                <div className="grid grid-cols-2 gap-6 text-center">
-                  <div className="bg-white/10 rounded-2xl p-6 border border-white/10 backdrop-blur-md">
-                    <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Adam</p>
-                    <p className="text-3xl font-black tabular-nums">{stats.payouts.Adam.toLocaleString()}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
+              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-100 text-left">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-4 text-left"><HandCoins size={24} /> Wypłaty Własne</h3>
+                <div className="grid grid-cols-2 gap-8 text-center text-left">
+                  <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-left text-center">
+                    <p className="text-[11px] font-black text-emerald-100 uppercase mb-3 text-left text-center">Adam</p>
+                    <p className="text-4xl font-black tabular-nums text-left text-center">{stats.payouts.Adam.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white/10 rounded-2xl p-6 border border-white/10 backdrop-blur-md">
-                    <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Mateusz</p>
-                    <p className="text-3xl font-black tabular-nums">{stats.payouts.Mateusz.toLocaleString()}</p>
+                  <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-left text-center">
+                    <p className="text-[11px] font-black text-emerald-100 uppercase mb-3 text-left text-center">Mateusz</p>
+                    <p className="text-4xl font-black tabular-nums text-left text-center">{stats.payouts.Mateusz.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2rem] p-8 flex flex-col justify-center items-center text-center">
-                <ShieldCheck size={48} className="text-indigo-600 mb-4" />
-                <h3 className="text-lg font-black text-slate-800 mb-2">Zarządzanie Danymi</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase mb-6 tracking-wider">Bezpieczna Kopia Zapasowa</p>
-                <div className="flex gap-4">
-                  <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-xl font-black text-xs uppercase hover:bg-slate-700 transition-all"><Download size={16}/> Eksport JSON</button>
-                  <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-800 rounded-xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm"><Upload size={16}/> Import danych</button>
+              <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] p-10 flex flex-col justify-center items-center text-center text-left">
+                <ShieldCheck size={56} className="text-indigo-600 mb-6" />
+                <h3 className="text-2xl font-black text-slate-800 mb-3 text-left">Archiwizacja Danych</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em] text-left">Kopia Bezpieczeństwa Systemu</p>
+                <div className="flex gap-5 text-left">
+                  <button onClick={handleExport} className="flex items-center gap-3 px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase hover:bg-slate-700 transition-all shadow-lg text-left"><Download size={20}/> Eksport</button>
+                  <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm text-left"><Upload size={20}/> Import</button>
                   <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
                 </div>
-                {importStatus && <p className="mt-4 text-xs font-black text-indigo-600 animate-bounce">{importStatus}</p>}
+                {importStatus && <p className="mt-6 text-xs font-black text-indigo-600 animate-bounce text-left">{importStatus}</p>}
               </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b bg-slate-50/50 flex items-center justify-between">
-                <h3 className="font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3"><PieChart size={18} className="text-indigo-600" /> Analiza Rentowności Projektów</h3>
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden text-left">
+              <div className="p-8 border-b bg-slate-50/50 flex items-center justify-between text-left">
+                <h3 className="font-black text-xs uppercase tracking-[0.3em] flex items-center gap-4 text-left text-left"><PieChart size={24} className="text-indigo-600" /> Analiza Projektów</h3>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-400 border-b">
+              <div className="overflow-x-auto text-left">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest text-left">
                     <tr>
-                      <th className="px-8 py-4">Nazwa Projektu</th>
-                      <th className="px-8 py-4 text-center">Całkowity Przychód</th>
-                      <th className="px-8 py-4 text-center">Koszty Operacyjne</th>
-                      <th className="px-8 py-4 text-right">Zysk z Projektu</th>
+                      <th className="px-10 py-5 text-left">Projekt</th>
+                      <th className="px-10 py-5 text-center">Przychód</th>
+                      <th className="px-10 py-5 text-center">Koszt</th>
+                      <th className="px-10 py-5 text-right text-left">Bilans</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 text-left">
                     {Object.entries(stats.clientSummary).map(([name, data]) => (
-                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-8 py-5 font-black text-slate-800">{name}</td>
-                        <td className="px-8 py-5 text-center text-green-600 font-bold">+{data.income.toLocaleString()}</td>
-                        <td className="px-8 py-5 text-center text-red-400">-{data.expense.toLocaleString()}</td>
-                        <td className={`px-8 py-5 text-right font-black tabular-nums ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
-                          {(data.income - data.expense).toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
+                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group text-left">
+                        <td className="px-10 py-6 font-black text-slate-800 text-left">{name}</td>
+                        <td className="px-10 py-6 text-center text-green-600 font-black">+{data.income.toLocaleString()}</td>
+                        <td className="px-10 py-6 text-center text-red-400 font-bold">-{data.expense.toLocaleString()}</td>
+                        <td className={`px-10 py-6 text-right font-black tabular-nums text-left ${(data.income - data.expense) >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
+                          {(data.income - data.expense).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
                         </td>
                       </tr>
                     ))}
@@ -487,9 +523,9 @@ const App = () => {
         )}
       </main>
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; border: 2px solid #f8fafc; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
     </div>
