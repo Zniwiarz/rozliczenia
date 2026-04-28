@@ -68,7 +68,7 @@ const db = getFirestore(app);
 const appId = "finanse-firmowe-v6"; 
 
 const App = () => {
-  // TYMCZASOWO: Tryb podglądu bez logowania (ustawienie testowego usera)
+  // TYMCZASOWO: Tryb podglądu bez logowania
   const [user, setUser] = useState({ email: 'admin@test.pl', uid: 'test-user-id' });
   const [view, setView] = useState('dashboard'); 
   const [activeTab, setActiveTab] = useState('income'); 
@@ -104,41 +104,7 @@ const App = () => {
     { name: 'Faktura', icon: <FileText size={12} />, color: '#6366f1' }   
   ];
 
-  const getCategoryIcon = (description) => {
-    const allTags = [...quickTagsIncome, ...quickTagsExpense];
-    const tag = allTags.find(t => t.name.toLowerCase() === description.toLowerCase());
-    if (tag) return React.cloneElement(tag.icon, { color: tag.color });
-    return <TagIcon size={12} className="text-slate-300" />;
-  };
-
-  // Ładowanie danych z Firestore
-  useEffect(() => {
-    if (!user) return;
-    const unsubTrans = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setTransactions(data.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
-    });
-    const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClients(data.sort((a, b) => a.name.localeCompare(b.name)));
-    });
-    return () => { unsubTrans(); unsubClients(); };
-  }, [user]);
-
-  const loginWithGoogle = async () => {
-    setAuthError(null);
-    try { 
-      const result = await signInWithPopup(auth, new GoogleAuthProvider());
-      if (!ALLOWED_EMAILS.includes(result.user.email)) {
-        await signOut(auth);
-        setAuthError(`Brak uprawnień dla ${result.user.email}`);
-        return;
-      }
-      setUser(result.user);
-    } catch (err) { 
-      setAuthError("Błąd logowania."); 
-    }
-  };
+  // --- FUNKCJE POMOCNICZE (W ZASIĘGU KOMPONENTU) ---
 
   const handleExport = () => {
     const backupData = {
@@ -157,7 +123,7 @@ const App = () => {
   };
 
   const handleImport = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file || !user) return;
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -226,6 +192,42 @@ const App = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getCategoryIcon = (description) => {
+    const allTags = [...quickTagsIncome, ...quickTagsExpense];
+    const tag = allTags.find(t => t.name.toLowerCase() === description.toLowerCase());
+    if (tag) return React.cloneElement(tag.icon, { color: tag.color });
+    return <TagIcon size={12} className="text-slate-300" />;
+  };
+
+  const loginWithGoogle = async () => {
+    setAuthError(null);
+    try { 
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      if (!ALLOWED_EMAILS.includes(result.user.email)) {
+        await signOut(auth);
+        setAuthError(`Brak uprawnień dla ${result.user.email}`);
+        return;
+      }
+      setUser(result.user);
+    } catch (err) { 
+      setAuthError("Błąd logowania."); 
+    }
+  };
+
+  // Ładowanie danych z Firestore
+  useEffect(() => {
+    if (!user) return;
+    const unsubTrans = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTransactions(data.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
+    });
+    const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClients(data.sort((a, b) => a.name.localeCompare(b.name)));
+    });
+    return () => { unsubTrans(); unsubClients(); };
+  }, [user]);
+
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
       const matchesSearch = t.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -270,7 +272,7 @@ const App = () => {
 
   if (!user && !loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6 text-left">
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 text-center space-y-8 border border-slate-100">
           <div className="bg-indigo-600 w-24 h-24 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-indigo-200 shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-500"><Building2 size={48} /></div>
           <div><h2 className="text-3xl font-black text-slate-800 tracking-tight text-left">System Finansowy</h2><p className="text-slate-500 mt-2 font-bold uppercase text-[10px] tracking-widest text-indigo-600 text-left">Logowanie wyłączone (Tryb Podglądu)</p></div>
@@ -282,7 +284,7 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12 font-sans antialiased text-left">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12 font-sans antialiased">
       <header className="bg-white border-b sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/80">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
@@ -308,63 +310,63 @@ const App = () => {
       <main className="max-w-7xl mx-auto px-6 mt-8">
         {view === 'dashboard' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800 group text-left">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-600/30 transition-all text-left"></div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-left text-left">Dostępny kapitał</p>
-                <h2 className="text-4xl font-black mb-6 tracking-tight tabular-nums text-left text-left">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1 text-left">PLN</span></h2>
-                <div className="grid grid-cols-2 gap-4 text-left">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-left">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1 text-left">Mateusz (do zwrotu)</p>
-                    <p className="text-lg font-black tabular-nums text-left">{stats.pendingDebts.Mateusz.toFixed(0)} zł</p>
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800 group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-600/30 transition-all"></div>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Dostępny kapitał</p>
+                <h2 className="text-4xl font-black mb-6 tracking-tight tabular-nums">{stats.availableBalance.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} <span className="text-xs font-medium text-slate-500 ml-1">PLN</span></h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Mateusz (do zwrotu)</p>
+                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Mateusz.toFixed(0)} zł</p>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-left">
-                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1 text-left">Adam (do zwrotu)</p>
-                    <p className="text-lg font-black tabular-nums text-left">{stats.pendingDebts.Adam.toFixed(0)} zł</p>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase font-black text-orange-400 mb-1">Adam (do zwrotu)</p>
+                    <p className="text-lg font-black tabular-nums">{stats.pendingDebts.Adam.toFixed(0)} zł</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden border-b-8 border-b-indigo-600 text-left">
-                <div className="flex p-1.5 bg-slate-50 border-b text-left text-left">
+              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden border-b-8 border-b-indigo-600">
+                <div className="flex p-1.5 bg-slate-50 border-b">
                   <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-4 rounded-3xl text-xs font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
                   <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-4 rounded-3xl text-xs font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt</button>
                 </div>
-                <form onSubmit={handleAddOrEdit} className="p-8 space-y-6 text-left">
+                <form onSubmit={handleAddOrEdit} className="p-8 space-y-6">
                   {editingTransaction && (
-                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center justify-between text-left">
+                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center justify-between">
                       <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Tryb Edycji</span>
-                      <button onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={16}/></button>
+                      <button type="button" onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={16}/></button>
                     </div>
                   )}
-                  <div className="space-y-5 text-left text-left">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                      <div className="space-y-1.5 text-left text-left">
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5 text-left">
                         <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Klient / Projekt</label>
-                        <div className="flex gap-2 text-left">
+                        <div className="flex gap-2">
                           {isAddingNewClient ? (
-                            <input autoFocus className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-left" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
+                            <input autoFocus className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
                           ) : (
-                            <select className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700 focus:border-indigo-500 text-left" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
+                            <select className="flex-1 px-4 py-3.5 text-sm rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700 focus:border-indigo-500" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
                               <option value="">Wybierz klienta...</option>
                               {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
                           )}
-                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3.5 rounded-xl bg-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all text-left"><Plus size={18} /></button>
+                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-3.5 rounded-xl bg-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><Plus size={18} /></button>
                         </div>
                       </div>
                       <div className="space-y-1.5 text-left">
                         <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
                         {activeTab === 'income' ? (
-                          <div className="flex items-center gap-3 px-4 py-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-black text-xs text-left"><Building2 size={18} /> Konto Firmowe</div>
+                          <div className="flex items-center gap-3 px-4 py-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-black text-xs"><Building2 size={18} /> Konto Firmowe</div>
                         ) : (
-                          <div className="flex flex-col gap-2 text-left">
-                            <div className="flex p-1 bg-slate-100 rounded-xl text-left">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex p-1 bg-slate-100 rounded-xl">
                               <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Firmowe</button>
                               <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500'}`}>Prywatne</button>
                             </div>
                             {!formData.isCompanyFunds && (
-                              <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 text-left">
+                              <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in zoom-in-95">
                                 {staff.map(name => (
                                   <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
                                 ))}
@@ -377,22 +379,22 @@ const App = () => {
 
                     <div className="space-y-1.5 text-left">
                       <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Opis transakcji</label>
-                      <div className="flex flex-wrap gap-2 mb-4 text-left">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (
                           <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-4 py-2 rounded-xl text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
                         ))}
                       </div>
-                      <input className="w-full px-4 py-4 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-left" placeholder="Szczegóły..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
+                      <input className="w-full px-4 py-4 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold" placeholder="Szczegóły..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
                     </div>
 
                     <div className="space-y-1.5 text-left">
                       <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kwota</label>
-                      <div className="flex gap-4 text-left">
-                        <div className="relative flex-1 text-left">
-                          <input type="number" step="0.01" className="w-full pl-5 pr-14 py-5 rounded-[1.5rem] border-4 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all text-left" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
-                          <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300 text-lg text-left">zł</span>
+                      <div className="flex gap-4">
+                        <div className="relative flex-1">
+                          <input type="number" step="0.01" className="w-full pl-5 pr-14 py-5 rounded-[1.5rem] border-4 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all tracking-tighter" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
+                          <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300 text-lg">zł</span>
                         </div>
-                        <button type="submit" className={`px-10 rounded-[1.5rem] text-white font-black text-sm uppercase shadow-2xl transition-all hover:scale-[1.03] ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
+                        <button type="submit" className={`px-10 rounded-[1.5rem] text-white font-black text-sm uppercase shadow-2xl transition-all hover:scale-[1.03] active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'}`}>
                           {editingTransaction ? 'Zapisz' : 'Dodaj'}
                         </button>
                       </div>
@@ -403,25 +405,25 @@ const App = () => {
             </div>
 
             <div className="lg:col-span-7 space-y-4 text-left">
-              <div className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center text-left text-left text-left">
-                <div className="relative flex-1 w-full text-left text-left">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-left" size={20} />
-                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all text-left text-left" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <div className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <input className="w-full pl-14 pr-5 py-4 bg-slate-50 rounded-2xl border-none outline-none text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/20 transition-all" placeholder="Szukaj w historii..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
-                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0 text-left text-left">
+                <div className="flex bg-slate-100 p-1 rounded-2xl shrink-0">
                   <button onClick={() => setDateFilter('all')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Wszystko</button>
                   <button onClick={() => setDateFilter('month')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${dateFilter === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Miesiąc</button>
                 </div>
               </div>
 
-              <div className="space-y-4 max-h-[750px] overflow-y-auto pr-3 custom-scrollbar text-left text-left">
+              <div className="space-y-4 max-h-[750px] overflow-y-auto pr-3 custom-scrollbar text-left">
                 {filteredTransactions.length > 0 ? filteredTransactions.map((item) => (
-                  <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm hover:shadow-xl text-left">
+                  <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm hover:shadow-xl text-left text-left text-left">
                     <div className="flex items-center gap-6 min-w-0 text-left">
                       <div className={`p-5 rounded-2xl shrink-0 transition-all group-hover:scale-110 ${item.type === 'income' ? 'bg-green-50 text-green-600' : (item.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400')}`}>
                         {item.type === 'income' ? <TrendingUp size={24} /> : (item.status === 'pending' ? <RotateCcw size={24} /> : <CheckCircle2 size={24} />)}
                       </div>
-                      <div className="min-w-0 text-left text-left">
+                      <div className="min-w-0 text-left">
                         <div className="flex items-center gap-3 mb-1 text-left">
                           <span className="font-black text-base text-slate-800 truncate text-left">{item.client}</span>
                           <span className={`text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tight ${item.person === 'Firma' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-700'}`}>{item.person}</span>
@@ -433,13 +435,13 @@ const App = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-5 shrink-0 text-left">
-                      <div className="text-right text-left text-left text-left">
+                      <div className="text-right text-left text-left">
                         <div className={`font-black text-xl tracking-tighter tabular-nums ${item.type === 'income' ? 'text-green-600' : (item.status === 'pending' ? 'text-orange-600' : 'text-slate-400')}`}>
                           {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
                         </div>
                         <div className="flex gap-3 justify-end mt-2 text-left">
                           {item.status === 'pending' && (
-                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-xl uppercase shadow-md hover:bg-indigo-700 transition-colors text-left">Rozlicz</button>
+                            <button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id), { status: 'settled' })} className="px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-xl uppercase shadow-md hover:bg-indigo-700 transition-colors text-left text-left text-left">Rozlicz</button>
                           )}
                           <button onClick={() => startEdit(item)} className="p-2.5 text-slate-300 hover:text-indigo-600 bg-slate-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-indigo-100 text-left"><Edit2 size={16} /></button>
                           <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', item.id))} className="p-2.5 text-slate-300 hover:text-red-500 bg-slate-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-red-100 text-left"><Trash2 size={16} /></button>
@@ -448,9 +450,9 @@ const App = () => {
                     </div>
                   </div>
                 )) : (
-                  <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 text-left text-left">
-                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 text-left text-left"><Search size={40}/></div>
-                    <p className="font-black text-slate-400 uppercase text-xs tracking-[0.3em] text-center text-center">Brak wyników</p>
+                  <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 text-left"><Search size={40}/></div>
+                    <p className="font-black text-slate-400 uppercase text-xs tracking-[0.3em] text-center">Brak wyników</p>
                   </div>
                 )}
               </div>
@@ -458,69 +460,69 @@ const App = () => {
           </div>
         ) : (
           /* WIDOK RAPORTU */
-          <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-6 text-left text-left text-left text-left">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left text-left text-left">
-              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left">
-                <div className="absolute top-0 right-0 p-6 text-green-50 transition-colors group-hover:text-green-100 text-left text-left text-left"><TrendingUp size={64}/></div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Przychody</p>
-                <p className="text-4xl font-black text-green-600 tabular-nums text-left text-left text-left">+{stats.totalIncome.toLocaleString()} zł</p>
+          <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-6 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 text-green-50 transition-colors group-hover:text-green-100"><TrendingUp size={64}/></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Przychody</p>
+                <p className="text-4xl font-black text-green-600 tabular-nums">+{stats.totalIncome.toLocaleString()} zł</p>
               </div>
-              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group text-left text-left text-left text-left">
-                <div className="absolute top-0 right-0 p-6 text-red-50 transition-colors group-hover:text-red-100 text-left text-left"><RotateCcw size={64}/></div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Koszty</p>
-                <p className="text-4xl font-black text-red-500 tabular-nums text-left text-left text-left">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 text-red-50 transition-colors group-hover:text-red-100"><RotateCcw size={64}/></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Koszty</p>
+                <p className="text-4xl font-black text-red-500 tabular-nums">-{ (stats.totalIncome - stats.historicalProfit).toLocaleString()} zł</p>
               </div>
-              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center text-left text-left text-left">
+              <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-100 md:col-span-2 flex flex-col justify-center">
                 <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-3 text-left">Zysk Netto Wypracowany</p>
-                <p className="text-5xl font-black tabular-nums text-left text-left">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
+                <p className="text-5xl font-black tabular-nums">{stats.historicalProfit.toLocaleString('pl-PL')} PLN</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-left text-left">
-              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-100 text-left text-left text-left text-left text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-4 text-left"><HandCoins size={24} /> Wypłaty Własne</h3>
-                <div className="grid grid-cols-2 gap-8 text-center text-left text-left text-left text-left text-left">
-                  <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-left text-center">
-                    <p className="text-[11px] font-black text-emerald-100 uppercase mb-3 text-left text-center">Adam</p>
-                    <p className="text-4xl font-black tabular-nums text-left text-center">{stats.payouts.Adam.toLocaleString()}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="bg-emerald-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-100">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-4"><HandCoins size={24} /> Wypłaty Własne</h3>
+                <div className="grid grid-cols-2 gap-8 text-center">
+                  <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-center text-center">
+                    <p className="text-[11px] font-black text-emerald-100 uppercase mb-3">Adam</p>
+                    <p className="text-4xl font-black tabular-nums">{stats.payouts.Adam.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-left text-center">
-                    <p className="text-[11px] font-black text-emerald-100 uppercase mb-3 text-left text-center">Mateusz</p>
-                    <p className="text-4xl font-black tabular-nums text-left text-center">{stats.payouts.Mateusz.toLocaleString()}</p>
+                  <div className="bg-white/10 rounded-3xl p-8 border border-white/10 backdrop-blur-md text-center text-center">
+                    <p className="text-[11px] font-black text-emerald-100 uppercase mb-3">Mateusz</p>
+                    <p className="text-4xl font-black tabular-nums">{stats.payouts.Mateusz.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] p-10 flex flex-col justify-center items-center text-center text-left">
+              <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] p-10 flex flex-col justify-center items-center text-center text-left text-left text-left">
                 <ShieldCheck size={56} className="text-indigo-600 mb-6 text-left" />
-                <h3 className="text-2xl font-black text-slate-800 mb-3 text-left text-left">Archiwizacja Danych</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em] text-left text-left text-left">Kopia Bezpieczeństwa</p>
-                <div className="flex gap-5 text-left text-left text-left text-left">
-                  <button onClick={handleExport} className="flex items-center gap-3 px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase hover:bg-slate-700 transition-all shadow-lg text-left text-left text-left text-left"><Download size={20}/> Eksport</button>
-                  <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm text-left text-left"><Upload size={20}/> Import</button>
+                <h3 className="text-2xl font-black text-slate-800 mb-3 text-left">Archiwizacja Danych</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-8 tracking-[0.2em] text-left">Kopia Bezpieczeństwa</p>
+                <div className="flex gap-5 text-left text-left">
+                  <button onClick={handleExport} className="flex items-center gap-3 px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase hover:bg-slate-700 transition-all shadow-lg text-left text-left text-left text-left text-left text-left"><Download size={20}/> Eksport</button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 rounded-2xl font-black text-xs uppercase hover:border-indigo-600 transition-all shadow-sm text-left"><Upload size={20}/> Import</button>
                   <input type="file" ref={fileInputRef} className="hidden text-left" accept=".json" onChange={handleImport} />
                 </div>
-                {importStatus && <p className="mt-6 text-xs font-black text-indigo-600 animate-bounce text-left text-left text-left">{importStatus}</p>}
+                {importStatus && <p className="mt-6 text-xs font-black text-indigo-600 animate-bounce text-left text-left">{importStatus}</p>}
               </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden text-left text-left text-left text-left">
-              <div className="p-8 border-b bg-slate-50/50 flex items-center justify-between text-left text-left text-left">
-                <h3 className="font-black text-xs uppercase tracking-[0.3em] flex items-center gap-4 text-left text-left text-left text-left"><PieChart size={24} className="text-indigo-600" /> Analiza Projektów</h3>
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden text-left">
+              <div className="p-8 border-b bg-slate-50/50 flex items-center justify-between text-left text-left">
+                <h3 className="font-black text-xs uppercase tracking-[0.3em] flex items-center gap-4 text-left"><PieChart size={24} className="text-indigo-600" /> Analiza Projektów</h3>
               </div>
-              <div className="overflow-x-auto text-left text-left text-left text-left text-left">
+              <div className="overflow-x-auto text-left">
                 <table className="w-full text-left text-left text-left">
-                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest text-left text-left text-left text-left text-left">
+                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest text-left text-left text-left">
                     <tr>
-                      <th className="px-10 py-5 text-left">Projekt</th>
+                      <th className="px-10 py-5 text-left text-left">Projekt</th>
                       <th className="px-10 py-5 text-center text-left text-left text-left">Przychód</th>
                       <th className="px-10 py-5 text-center text-left text-left text-left text-left">Koszt</th>
-                      <th className="px-10 py-5 text-right text-left text-left text-left text-left">Bilans</th>
+                      <th className="px-10 py-5 text-right text-left text-left text-left text-left text-left">Bilans</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-left text-left text-left text-left">
+                  <tbody className="divide-y divide-slate-100 text-left text-left">
                     {Object.entries(stats.clientSummary).map(([name, data]) => (
-                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group text-left text-left text-left text-left text-left text-left">
+                      <tr key={name} className="hover:bg-slate-50/50 transition-colors group text-left text-left text-left">
                         <td className="px-10 py-6 font-black text-slate-800 text-left text-left text-left text-left">{name}</td>
                         <td className="px-10 py-6 text-center text-green-600 font-black text-left text-left text-left text-left">+{data.income.toLocaleString()}</td>
                         <td className="px-10 py-6 text-center text-red-400 font-bold text-left text-left text-left text-left text-left">-{data.expense.toLocaleString()}</td>
