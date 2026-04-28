@@ -89,15 +89,15 @@ const App = () => {
   });
 
   const staff = ['Adam', 'Mateusz'];
-  const quickTagsIncome = [{ name: 'Zaliczka', icon: <Banknote size={12} />, color: '#10b981' }];
+  const quickTagsIncome = [{ name: 'Zaliczka', icon: <Banknote size={14} />, color: '#10b981' }];
   const quickTagsExpense = [
-    { name: 'Materiały', icon: <Package size={12} />, color: '#3b82f6' }, 
-    { name: 'Paliwo', icon: <Fuel size={12} />, color: '#f59e0b' },      
-    { name: 'Usługi', icon: <Briefcase size={12} />, color: '#06b6d4' },  
-    { name: 'Wypłata', icon: <HandCoins size={12} />, color: '#10b981' }, 
-    { name: 'Inwestycja', icon: <Gem size={12} />, color: '#8b5cf6' },    
-    { name: 'Akcesoria', icon: <Wrench size={12} />, color: '#64748b' },  
-    { name: 'Faktura', icon: <FileText size={12} />, color: '#6366f1' }   
+    { name: 'Materiały', icon: <Package size={14} />, color: '#3b82f6' }, 
+    { name: 'Paliwo', icon: <Fuel size={14} />, color: '#f59e0b' },      
+    { name: 'Usługi', icon: <Briefcase size={14} />, color: '#06b6d4' },  
+    { name: 'Wypłata', icon: <HandCoins size={14} />, color: '#10b981' }, 
+    { name: 'Inwestycja', icon: <Gem size={14} />, color: '#8b5cf6' },    
+    { name: 'Akcesoria', icon: <Wrench size={14} />, color: '#64748b' },  
+    { name: 'Faktura', icon: <FileText size={14} />, color: '#6366f1' }   
   ];
 
   // --- FUNKCJE POMOCNICZE ---
@@ -200,7 +200,7 @@ const App = () => {
     const allTags = [...quickTagsIncome, ...quickTagsExpense];
     const tag = allTags.find(t => t.name.toLowerCase() === description.toLowerCase());
     if (tag) return React.cloneElement(tag.icon, { color: tag.color });
-    return <TagIcon size={12} className="text-slate-300" />;
+    return <TagIcon size={14} className="text-slate-300" />;
   };
 
   // --- HOOKI ---
@@ -274,7 +274,7 @@ const App = () => {
 
   // --- RENDERING ---
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest text-xs">Ładowanie...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest text-sm">Ładowanie...</div>;
 
   if (!user) {
     return (
@@ -333,43 +333,43 @@ const App = () => {
                   <button onClick={() => { setActiveTab('income'); setEditingTransaction(null); }} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400'}`}>Wpłata</button>
                   <button onClick={() => { setActiveTab('expense'); setEditingTransaction(null); }} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Koszt</button>
                 </div>
-                <form onSubmit={handleAddOrEdit} className="p-6 space-y-5 text-left">
+                <form onSubmit={handleAddOrEdit} className="p-6 space-y-6 text-left">
                   {editingTransaction && (
                     <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between text-left">
                       <span className="text-[10px] font-black text-indigo-600 uppercase flex items-center gap-2"><Edit2 size={12}/> Edycja</span>
                       <button type="button" onClick={() => {setEditingTransaction(null); setFormData({client:'', description:'', amount:'', person:'Adam', isCompanyFunds:true});}} className="text-indigo-400 hover:text-indigo-600"><X size={16}/></button>
                     </div>
                   )}
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Klient</label>
-                        <div className="flex gap-2 text-left">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2 text-left">
+                        <label className="text-xs font-black text-slate-400 uppercase ml-1">Klient</label>
+                        <div className="flex gap-2 text-left items-stretch">
                           {isAddingNewClient ? (
-                            <input autoFocus className="flex-1 px-3 py-2 text-sm rounded-lg border border-indigo-200 outline-none font-bold text-left" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
+                            <input autoFocus className="flex-1 px-4 py-3 text-base rounded-xl border border-indigo-200 outline-none font-bold text-left focus:ring-2 focus:ring-indigo-500/20" placeholder="Nazwa..." value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} />
                           ) : (
-                            <select className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 outline-none bg-white font-black text-slate-700 text-left" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
+                            <select className="flex-1 px-4 py-3 text-base rounded-xl border border-slate-200 outline-none bg-white font-black text-slate-700 text-left focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} required>
                               <option value="">Wybierz...</option>
                               {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                             </select>
                           )}
-                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="p-2 rounded-lg bg-slate-100 text-indigo-600 border border-slate-200 hover:bg-indigo-600 hover:text-white transition-all"><Plus size={16} /></button>
+                          <button type="button" onClick={() => setIsAddingNewClient(!isAddingNewClient)} className="px-3.5 rounded-xl bg-slate-100 text-indigo-600 border border-slate-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center"><Plus size={20} /></button>
                         </div>
                       </div>
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
+                      <div className="space-y-2 text-left">
+                        <label className="text-xs font-black text-slate-400 uppercase ml-1">Konto / Osoba</label>
                         {activeTab === 'income' ? (
-                          <div className="flex items-center gap-3 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700 font-black text-[10px] uppercase text-left"><Building2 size={16} /> Konto Firmowe</div>
+                          <div className="flex items-center gap-4 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-black text-xs uppercase text-left h-full"><Building2 size={24} /> <span>Konto Firmowe</span></div>
                         ) : (
-                          <div className="flex flex-col gap-2 text-left">
-                            <div className="flex p-0.5 bg-slate-100 rounded-lg">
-                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-1 rounded-md text-[9px] font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button>
-                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-1 rounded-md text-[9px] font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button>
+                          <div className="flex flex-col gap-3 text-left">
+                            <div className="flex p-1 bg-slate-100 rounded-xl">
+                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: true})} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${formData.isCompanyFunds ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}>Firmowe</button>
+                              <button type="button" onClick={() => setFormData({...formData, isCompanyFunds: false})} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!formData.isCompanyFunds ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>Prywatne</button>
                             </div>
                             {!formData.isCompanyFunds && (
-                              <div className="flex gap-1 p-0.5 bg-orange-50 rounded-lg border border-orange-100 animate-in fade-in zoom-in-95 text-left">
+                              <div className="flex gap-1 p-1 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in zoom-in-95 text-left">
                                 {staff.map(name => (
-                                  <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1 rounded-md text-[9px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
+                                  <button key={name} type="button" onClick={() => setFormData({...formData, person: name})} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black ${formData.person === name ? 'bg-white text-orange-600 shadow-sm' : 'text-orange-300'}`}>{name}</button>
                                 ))}
                               </div>
                             )}
@@ -378,24 +378,24 @@ const App = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 text-left">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Opis transakcji</label>
-                      <div className="flex flex-wrap gap-1.5 mb-2">
+                    <div className="space-y-2 text-left">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Opis transakcji</label>
+                      <div className="flex flex-wrap gap-2 mb-3">
                         {(activeTab === 'income' ? quickTagsIncome : quickTagsExpense).map(tag => (
-                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-3 py-1 rounded-lg text-[10px] font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
+                          <button key={tag.name} type="button" onClick={() => setFormData({...formData, description: tag.name})} className={`px-4 py-2 rounded-xl text-xs font-black border flex items-center gap-2 transition-all ${formData.description === tag.name ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}>{tag.icon} {tag.name}</button>
                         ))}
                       </div>
-                      <input className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 outline-none font-bold focus:border-indigo-500 text-left" placeholder="Co to za operacja?" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
+                      <input className="w-full px-4 py-3.5 text-base rounded-xl border border-slate-200 outline-none font-bold focus:ring-2 focus:ring-indigo-500/20 text-left" placeholder="Co to za operacja?" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
                     </div>
 
-                    <div className="space-y-1.5 text-left">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Kwota</label>
+                    <div className="space-y-2 text-left">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Kwota</label>
                       <div className="flex gap-4">
                         <div className="relative flex-1">
-                          <input type="number" step="0.01" className="w-full pl-4 pr-12 py-3 rounded-xl border-2 border-slate-50 font-black text-2xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all text-left" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-300 text-sm">zł</span>
+                          <input type="number" step="0.01" className="w-full pl-5 pr-14 py-4 rounded-xl border-2 border-slate-50 font-black text-3xl bg-slate-50/50 outline-none focus:border-indigo-500 transition-all text-left" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
+                          <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300 text-base">zł</span>
                         </div>
-                        <button type="submit" className={`px-8 rounded-xl text-white font-black text-xs uppercase shadow-lg transition-all active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-50' : 'bg-red-600 shadow-red-50'}`}>
+                        <button type="submit" className={`px-10 rounded-xl text-white font-black text-sm uppercase shadow-lg transition-all active:scale-95 ${activeTab === 'income' ? 'bg-green-600 shadow-green-50' : 'bg-red-600 shadow-red-50'}`}>
                           {editingTransaction ? 'Zapisz' : 'Dodaj'}
                         </button>
                       </div>
@@ -430,7 +430,7 @@ const App = () => {
                 </div>
               </div>
 
-              <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1.5 custom-scrollbar text-left">
+              <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-1.5 custom-scrollbar text-left">
                 {filteredTransactions.length > 0 ? filteredTransactions.map((item) => (
                   <div key={item.id} className="bg-white p-4 rounded-[1rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-xs text-left">
                     <div className="flex items-center gap-4 min-w-0 text-left">
