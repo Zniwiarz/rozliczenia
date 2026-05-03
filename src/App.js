@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 
 // --- KONFIGURACJA DOSTĘPU ---
-const ALLOWED_EMAILS = ["mateukokaczmarczyk@gmail.com"];
+const ALLOWED_EMAILS = ["mateukokaczmarczyk@gmail.com", "adamdubiel71@gmail.com"];
 
 const firebaseConfig = {
   apiKey: "AIzaSyAr_avRX_H4TKcIVQ2g2E57VH42k5KvPb4",
